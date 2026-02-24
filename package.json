@@ -1,0 +1,16 @@
+{
+  "name": "claude-management-dashboard",
+  "version": "1.00.0000",
+  "description": "Project-level configuration for Claude Management Dashboard. Contains the Product Engineer agent instructions, permissions, and test configuration.",
+  "main": "index.js",
+  "scripts": {
+    "test": "playwright test",
+    "test:report": "playwright show-report"
+  },
+  "keywords": [],
+  "author": "bh679",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.58.2"
+  }
+}
