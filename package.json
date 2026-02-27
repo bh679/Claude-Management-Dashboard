@@ -1,7 +1,7 @@
 {
   "name": "claude-management-dashboard",
-  "version": "1.00.0000",
-  "description": "Project-level configuration for Claude Management Dashboard. Contains the Product Engineer agent instructions, permissions, and test configuration.",
+  "version": "1.00.0001",
+  "description": "Parent orchestrator for the Claude Management Dashboard suite. Contains shared agent instructions, permissions, and test configuration. Sub-repos: Claude-Max-Usage-Analytics.",
   "main": "index.js",
   "scripts": {
     "test": "playwright test",
