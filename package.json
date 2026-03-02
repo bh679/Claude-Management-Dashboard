@@ -1,15 +1,20 @@
 {
   "name": "claude-management-dashboard",
-  "version": "1.00.0001",
-  "description": "Parent orchestrator for the Claude Management Dashboard suite. Contains shared agent instructions, permissions, and test configuration. Sub-repos: Claude-Max-Usage-Analytics.",
-  "main": "index.js",
+  "version": "1.01.0001",
+  "description": "Parent orchestrator for the Claude Management Dashboard suite. Tabbed dashboard with Usage Analytics, Project Reports, and Ideas views.",
+  "main": "server/index.js",
   "scripts": {
+    "start": "node server/index.js",
     "test": "playwright test",
     "test:report": "playwright show-report"
   },
   "keywords": [],
   "author": "bh679",
   "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.0"
+  },
   "devDependencies": {
     "@playwright/test": "^1.58.2"
   }
