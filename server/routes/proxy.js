@@ -2,7 +2,7 @@ const express = require('express');
 const http = require('http');
 const router = express.Router();
 
-const ANALYTICS_PORT = process.env.ANALYTICS_PORT || 8081;
+const ANALYTICS_PORT = process.env.ANALYTICS_PORT || 8080;
 const ANALYTICS_HOST = process.env.ANALYTICS_HOST || 'localhost';
 
 function proxyRequest(req, res) {
