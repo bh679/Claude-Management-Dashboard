@@ -3,6 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const proxyRoutes = require('./routes/proxy');
 const reportsRoutes = require('./routes/reports');
+const projectsRoutes = require('./routes/projects');
 const ideasRoutes = require('./routes/ideas');
 const blogRoutes = require('./routes/blog');
 
@@ -19,6 +20,7 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 // API routes
 app.use('/api/scrape', proxyRoutes);
 app.use('/api/reports', reportsRoutes);
+app.use('/api/projects', projectsRoutes);
 app.use('/api/ideas', ideasRoutes);
 app.use('/api/blog', blogRoutes);
 
