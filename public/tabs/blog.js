@@ -1,3 +1,20 @@
+const WIKI_RAW_BASE = 'https://raw.githubusercontent.com/wiki/bh679/weekly-blog';
+
+function parseIndex(markdown) {
+  const posts = [];
+  const entryRegex = /^## \[(.+?)\]\(.*?Blog:-(.+?)\)\n(.+)\n(.+)/gm;
+  let match;
+  while ((match = entryRegex.exec(markdown)) !== null) {
+    posts.push({
+      title: match[1],
+      slug: match[2],
+      date: match[3].trim(),
+      abstract: match[4].trim()
+    });
+  }
+  return posts;
+}
+
 async function loadBlogData() {
   const loading = document.getElementById('blog-loading');
   const error = document.getElementById('blog-error');
@@ -10,8 +27,10 @@ async function loadBlogData() {
   detail.classList.add('hidden');
 
   try {
-    const res = await fetch('/api/blog/posts');
-    const posts = await res.json();
+    const res = await fetch(WIKI_RAW_BASE + '/Home.md');
+    if (!res.ok) throw new Error('Failed to fetch blog index');
+    const markdown = await res.text();
+    const posts = parseIndex(markdown);
 
     loading.classList.add('hidden');
 
@@ -53,15 +72,10 @@ async function openPost(slug) {
   detailBody.innerHTML = '<p class="loading">Loading post...</p>';
 
   try {
-    const res = await fetch('/api/blog/post/' + encodeURIComponent(slug));
-    const data = await res.json();
-
-    if (data.error) {
-      detailBody.innerHTML = '<p class="error-state">' + esc(data.error) + '</p>';
-      return;
-    }
-
-    detailBody.innerHTML = marked.parse(data.markdown);
+    const res = await fetch(WIKI_RAW_BASE + '/Blog:-' + encodeURIComponent(slug) + '.md');
+    if (!res.ok) throw new Error('Post not found');
+    const markdown = await res.text();
+    detailBody.innerHTML = marked.parse(markdown);
   } catch (err) {
     detailBody.innerHTML = '<p class="error-state">Failed to load post: ' + esc(err.message) + '</p>';
   }
