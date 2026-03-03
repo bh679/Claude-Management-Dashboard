@@ -37,12 +37,8 @@ async function loadBlogData() {
 
 function renderSchedule(schedule) {
   const nextDate = new Date(schedule.nextRun);
-  document.getElementById('blog-next-date').textContent = nextDate.toLocaleDateString('en-AU', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-  });
-  document.getElementById('blog-next-time').textContent = nextDate.toLocaleTimeString('en-AU', {
-    hour: '2-digit', minute: '2-digit', timeZoneName: 'short'
-  });
+  document.getElementById('blog-next-date').textContent = blogFormatDate(nextDate);
+  document.getElementById('blog-next-time').textContent = blogFormatTime(nextDate);
   document.getElementById('blog-cron').textContent = schedule.cron;
 
   updateCountdown(nextDate);
@@ -113,15 +109,22 @@ async function loadBlogPosts() {
       return;
     }
 
-    list.innerHTML = posts.map(p => `
-      <div class="blog-card" data-slug="${blogEscapeHtml(p.slug)}">
-        <div class="blog-card-header">
-          <h3 class="blog-card-title">${blogEscapeHtml(p.title)}</h3>
-          <span class="blog-card-date">${blogEscapeHtml(p.date)}</span>
+    list.innerHTML = posts.map(p => {
+      // Parse the wiki date line (e.g. "2026-02-23 — All Projects") to format consistently
+      const datePart = p.date.split('—')[0].trim();
+      const parsed = new Date(datePart + 'T00:00:00');
+      const formattedDate = !isNaN(parsed) ? blogFormatDate(parsed) : blogEscapeHtml(p.date);
+
+      return `
+        <div class="blog-card" data-slug="${blogEscapeHtml(p.slug)}">
+          <div class="blog-card-header">
+            <h3 class="blog-card-title">${blogEscapeHtml(p.title)}</h3>
+            <span class="blog-card-date">${formattedDate}</span>
+          </div>
+          <p class="blog-card-abstract">${blogEscapeHtml(p.abstract)}</p>
         </div>
-        <p class="blog-card-abstract">${blogEscapeHtml(p.abstract)}</p>
-      </div>
-    `).join('');
+      `;
+    }).join('');
 
     list.classList.remove('hidden');
 
@@ -182,12 +185,8 @@ function renderRunHistory(runs) {
   // Build all cards
   _allRunCards = runs.map((run, i) => {
     const date = new Date(run.createdAt);
-    const dateStr = date.toLocaleDateString('en-AU', {
-      year: 'numeric', month: 'short', day: 'numeric'
-    });
-    const timeStr = date.toLocaleTimeString('en-AU', {
-      hour: '2-digit', minute: '2-digit'
-    });
+    const dateStr = blogFormatDate(date);
+    const timeStr = blogFormatTime(date);
     const isSuccess = run.conclusion === 'success';
     const statusClass = isSuccess ? 'run-success' : 'run-failure';
     const statusLabel = isSuccess ? 'Success' : 'Failed';
@@ -204,10 +203,10 @@ function renderRunHistory(runs) {
       <a href="${blogEscapeHtml(run.url)}" target="_blank" rel="noopener" class="run-card ${statusClass}${hiddenClass}">
         <div class="run-card-header">
           <span class="run-status-badge ${statusClass}">${statusLabel}</span>
-          <span class="run-trigger">${triggerLabel}</span>
+          <span class="run-date">${dateStr} ${timeStr}</span>
         </div>
         <div class="run-card-body">
-          <span class="run-date">${dateStr} ${timeStr}</span>
+          <span class="run-trigger">${triggerLabel}</span>
           <span class="run-duration">${blogEscapeHtml(run.duration)}</span>
         </div>
         ${failureHtml}
@@ -247,6 +246,18 @@ function toggleRunHistory() {
 }
 
 // --- Utility ---
+
+function blogFormatDate(date) {
+  return date.toLocaleDateString('en-AU', {
+    year: 'numeric', month: 'short', day: 'numeric'
+  });
+}
+
+function blogFormatTime(date) {
+  return date.toLocaleTimeString('en-AU', {
+    hour: '2-digit', minute: '2-digit'
+  });
+}
 
 function blogEscapeHtml(str) {
   if (!str) return '';
