@@ -194,7 +194,7 @@ function renderRunHistory(runs) {
 
     let failureHtml = '';
     if (!isSuccess && run.failureReason) {
-      failureHtml = `<div class="run-failure-reason">${blogEscapeHtml(run.failureReason)}</div>`;
+      failureHtml = `<span class="run-failure-reason">${blogEscapeHtml(run.failureReason)}</span>`;
     }
 
     const hiddenClass = i > 0 ? ' run-card-hidden' : '';
@@ -205,9 +205,9 @@ function renderRunHistory(runs) {
           <span class="run-status-badge ${statusClass}">${statusLabel}</span>
           <span class="run-trigger">${triggerLabel}</span>
           <span class="run-duration">${blogEscapeHtml(run.duration)}</span>
+          ${failureHtml}
           <span class="run-date">${dateStr} ${timeStr}</span>
         </div>
-        ${failureHtml}
       </a>
     `;
   });
