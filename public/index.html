@@ -142,8 +142,8 @@
       <div id="ideas-loading" class="loading">Loading ideas...</div>
       <div id="ideas-error" class="error-state hidden"></div>
       <div id="ideas-empty" class="no-data hidden">
-        <p>No ideas on the board yet.</p>
-        <p class="hint">Push an idea to the <code>inbox/</code> in the Ideas repo to get started.</p>
+        <p>No ideas on the <a href="https://github.com/users/bh679/projects/5" target="_blank">board</a> yet.</p>
+        <p class="hint">Push an idea to the <code>inbox/</code> in the <a href="https://github.com/bh679/ideas" target="_blank">Ideas repo</a> to get started.</p>
       </div>
       <div id="ideas-list" class="ideas-grid hidden"></div>
       <footer class="tab-footer">
@@ -169,6 +169,17 @@
         <span class="separator">|</span>
         <a href="https://github.com/bh679/Claude-Management-Dashboard" target="_blank">Dashboard Repo</a>
       </footer>
+    </div>
+
+    <!-- Blog Tab -->
+    <div id="tab-blog" class="tab-panel">
+      <div id="blog-loading" class="loading">Loading blog posts...</div>
+      <div id="blog-error" class="error-state hidden"></div>
+      <div id="blog-list" class="blog-grid hidden"></div>
+      <div id="blog-detail" class="hidden">
+        <button class="blog-back" onclick="closeBlogPost()">&larr; Back to posts</button>
+        <div id="blog-detail-body" class="markdown-body"></div>
+      </div>
     </div>
   </main>
 
