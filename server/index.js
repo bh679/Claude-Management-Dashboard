@@ -4,6 +4,7 @@ const path = require('path');
 const proxyRoutes = require('./routes/proxy');
 const reportsRoutes = require('./routes/reports');
 const ideasRoutes = require('./routes/ideas');
+const blogRoutes = require('./routes/blog');
 
 const PORT = process.env.PORT || 8080;
 
@@ -19,6 +20,7 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 app.use('/api/scrape', proxyRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/ideas', ideasRoutes);
+app.use('/api/blog', blogRoutes);
 
 app.listen(PORT, () => {
   console.log(`Claude Management Dashboard running on http://localhost:${PORT}`);
