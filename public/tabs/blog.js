@@ -201,13 +201,11 @@ function renderRunHistory(runs) {
 
     return `
       <a href="${blogEscapeHtml(run.url)}" target="_blank" rel="noopener" class="run-card ${statusClass}${hiddenClass}">
-        <div class="run-card-header">
+        <div class="run-card-row">
           <span class="run-status-badge ${statusClass}">${statusLabel}</span>
-          <span class="run-date">${dateStr} ${timeStr}</span>
-        </div>
-        <div class="run-card-body">
           <span class="run-trigger">${triggerLabel}</span>
           <span class="run-duration">${blogEscapeHtml(run.duration)}</span>
+          <span class="run-date">${dateStr} ${timeStr}</span>
         </div>
         ${failureHtml}
       </a>

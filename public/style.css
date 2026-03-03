@@ -593,11 +593,10 @@ body {
   border-left-color: #e07070;
 }
 
-.run-card-header {
+.run-card-row {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 4px;
+  gap: 12px;
 }
 
 .run-status-badge {
@@ -607,6 +606,7 @@ body {
   border-radius: 12px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  white-space: nowrap;
 }
 
 .run-status-badge.run-success {
@@ -620,24 +620,20 @@ body {
 }
 
 .run-trigger {
-  font-size: 12px;
+  font-size: 13px;
   color: #888;
-}
-
-.run-card-body {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.run-date {
-  font-size: 14px;
-  color: #ccc;
 }
 
 .run-duration {
   font-size: 13px;
   color: #888;
+}
+
+.run-date {
+  font-size: 14px;
+  color: #ccc;
+  margin-left: auto;
+  white-space: nowrap;
 }
 
 .run-failure-reason {
