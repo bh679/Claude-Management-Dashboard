@@ -15,7 +15,7 @@ human oversight at each stage.
 - **Live URL:** brennan.games/claudemd
 - **Repos:**
   - [Claude-Management-Dashboard](https://github.com/bh679/Claude-Management-Dashboard) — parent dashboard orchestrator
-  - [Claude-Max-Usage-Analytics](https://github.com/bh679/Claude-Max-Usage-Analytics) — sub-repo, Project #4, lives at `./Claude-Max-Usage-Analytics/`
+  - [Claude-Max-Usage-Analytics](https://github.com/bh679/Claude-Max-Usage-Analytics) — independent service, Project #4, connected via `ANALYTICS_HOST` / `ANALYTICS_PORT` env vars
 - **GitHub Project:** https://github.com/bh679?tab=projects (Project #3)
 - **Wiki:** https://github.com/bh679/Claude-Management-Dashboard/wiki
 
