@@ -17,6 +17,9 @@ function switchTab(tabName) {
   } else if (tabName === 'ideas' && !window._ideasLoaded) {
     window._ideasLoaded = true;
     loadIdeasData();
+  } else if (tabName === 'blog' && !window._blogLoaded) {
+    window._blogLoaded = true;
+    loadBlogData();
   }
 }
 
