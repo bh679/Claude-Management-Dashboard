@@ -163,6 +163,20 @@
         </section>
 
         <section class="section">
+          <h2>Blog Posts</h2>
+          <div id="blog-posts-loading" class="loading">Loading blog posts...</div>
+          <div id="blog-posts-error" class="error-state hidden"></div>
+          <div id="blog-posts-empty" class="no-data hidden">
+            <p>No blog posts yet.</p>
+          </div>
+          <div id="blog-list" class="blog-grid hidden"></div>
+          <div id="blog-detail" class="hidden">
+            <button class="blog-back" onclick="closeBlogPost()">&larr; Back to posts</button>
+            <div id="blog-detail-body" class="markdown-body"></div>
+          </div>
+        </section>
+
+        <section class="section">
           <h2>Run History</h2>
           <div class="blog-stats">
             <div class="blog-stat">
@@ -179,6 +193,7 @@
             </div>
           </div>
           <div id="blog-runs-list" class="blog-runs-list"></div>
+          <button id="blog-runs-toggle" class="runs-toggle-btn hidden"></button>
         </section>
       </div>
     </div>
