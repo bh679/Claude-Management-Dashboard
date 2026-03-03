@@ -429,7 +429,7 @@ body {
   line-height: 1.6;
 }
 
-/* Blog Grid */
+/* Blog Posts */
 .blog-grid {
   display: flex;
   flex-direction: column;
@@ -481,11 +481,215 @@ body {
   font-size: 14px;
   cursor: pointer;
   padding: 0;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .blog-back:hover {
   text-decoration: underline;
+}
+
+/* Blog Agent Tab */
+.blog-schedule-card {
+  background: #2a2a2a;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 20px 24px;
+}
+
+.blog-schedule-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 16px;
+}
+
+.blog-schedule-header h2 {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.blog-cron-label {
+  font-size: 13px;
+  color: #888;
+}
+
+.blog-cron-label code {
+  background: #333;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.blog-schedule-body {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.blog-countdown-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.blog-countdown {
+  font-size: 28px;
+  font-weight: 700;
+  color: #5ba8a0;
+}
+
+.blog-countdown-label {
+  font-size: 13px;
+  color: #888;
+}
+
+.blog-next-details {
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+  font-size: 14px;
+  color: #ccc;
+}
+
+.blog-next-details span:last-child {
+  font-size: 13px;
+  color: #888;
+}
+
+/* Blog Stats */
+.blog-stats {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 20px;
+}
+
+.blog-stat {
+  display: flex;
+  flex-direction: column;
+}
+
+.blog-stat-value {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.blog-stat-success {
+  color: #5ba8a0;
+}
+
+.blog-stat-failure {
+  color: #e07070;
+}
+
+.blog-stat-label {
+  font-size: 13px;
+  color: #888;
+}
+
+/* Blog Run Cards */
+.blog-runs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.run-card {
+  display: block;
+  background: #2a2a2a;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 12px 16px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.2s;
+  border-left: 3px solid #333;
+}
+
+.run-card:hover {
+  border-color: #555;
+}
+
+.run-card.run-success {
+  border-left-color: #5ba8a0;
+}
+
+.run-card.run-failure {
+  border-left-color: #e07070;
+}
+
+.run-card-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.run-status-badge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.run-status-badge.run-success {
+  background: rgba(91, 168, 160, 0.15);
+  color: #5ba8a0;
+}
+
+.run-status-badge.run-failure {
+  background: rgba(224, 112, 112, 0.15);
+  color: #e07070;
+}
+
+.run-trigger {
+  font-size: 13px;
+  color: #888;
+}
+
+.run-duration {
+  font-size: 13px;
+  color: #888;
+}
+
+.run-date {
+  font-size: 14px;
+  color: #ccc;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.run-failure-reason {
+  font-size: 13px;
+  color: #e07070;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.run-card-hidden {
+  display: none;
+}
+
+.runs-toggle-btn {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px;
+  background: #2a2a2a;
+  border: 1px solid #333;
+  border-radius: 8px;
+  color: #5ba8a0;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.runs-toggle-btn:hover {
+  background: #333;
+  border-color: #5ba8a0;
 }
 
 /* Responsive */
