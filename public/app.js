@@ -11,9 +11,9 @@ function switchTab(tabName) {
   if (tabName === 'usage' && !window._usageLoaded) {
     window._usageLoaded = true;
     loadUsageData();
-  } else if (tabName === 'reports' && !window._reportsLoaded) {
-    window._reportsLoaded = true;
-    loadReportData();
+  } else if (tabName === 'projects' && !window._projectsLoaded) {
+    window._projectsLoaded = true;
+    loadProjectsData();
   } else if (tabName === 'ideas' && !window._ideasLoaded) {
     window._ideasLoaded = true;
     loadIdeasData();
@@ -28,10 +28,13 @@ tabs.forEach(tab => {
 });
 
 // Initial tab from hash or default to usage
-const initialTab = window.location.hash.slice(1) || 'usage';
+// Redirect old #reports hash to #projects
+let initialTab = window.location.hash.slice(1) || 'usage';
+if (initialTab === 'reports') initialTab = 'projects';
 switchTab(initialTab);
 
 window.addEventListener('hashchange', () => {
-  const tab = window.location.hash.slice(1);
+  let tab = window.location.hash.slice(1);
+  if (tab === 'reports') tab = 'projects';
   if (tab) switchTab(tab);
 });

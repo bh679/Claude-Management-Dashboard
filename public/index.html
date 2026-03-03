@@ -12,7 +12,7 @@
       <span class="brand">Claude Dashboard</span>
       <div class="tabs">
         <button class="tab active" data-tab="usage">Usage</button>
-        <button class="tab" data-tab="reports">Reports</button>
+        <button class="tab" data-tab="projects">Projects</button>
         <button class="tab" data-tab="ideas">Ideas</button>
         <button class="tab" data-tab="blog">Blog</button>
       </div>
@@ -121,16 +121,74 @@
       </footer>
     </div>
 
-    <!-- Reports Tab -->
-    <div id="tab-reports" class="tab-panel">
-      <div id="reports-loading" class="loading">Loading report...</div>
-      <div id="reports-error" class="error-state hidden"></div>
-      <div id="reports-content" class="hidden">
-        <div class="report-header">
-          <h2 id="report-title"></h2>
-          <span class="report-date" id="report-date"></span>
-        </div>
-        <div id="report-body" class="markdown-body"></div>
+    <!-- Projects Tab -->
+    <div id="tab-projects" class="tab-panel">
+      <div id="projects-loading" class="loading">Loading projects...</div>
+      <div id="projects-error" class="error-state hidden"></div>
+      <div id="projects-content" class="hidden">
+        <section class="section">
+          <div class="projects-summary-header">
+            <h2>Project Status</h2>
+            <span class="projects-report-date" id="projects-report-date"></span>
+          </div>
+          <div class="projects-summary-bar">
+            <div class="projects-summary-stat">
+              <span class="projects-summary-value" id="projects-total"></span>
+              <span class="projects-summary-label">Projects</span>
+            </div>
+            <div class="projects-summary-stat">
+              <span class="projects-summary-value status-good" id="projects-moving"></span>
+              <span class="projects-summary-label">Moving well</span>
+            </div>
+            <div class="projects-summary-stat">
+              <span class="projects-summary-value status-warning" id="projects-at-risk"></span>
+              <span class="projects-summary-label">At risk</span>
+            </div>
+            <div class="projects-summary-stat">
+              <span class="projects-summary-value" id="projects-commits"></span>
+              <span class="projects-summary-label">Commits (7d)</span>
+            </div>
+            <div class="projects-summary-stat">
+              <span class="projects-summary-value" id="projects-prs"></span>
+              <span class="projects-summary-label">PRs merged (7d)</span>
+            </div>
+          </div>
+        </section>
+
+        <div id="projects-grid" class="projects-grid"></div>
+
+        <!-- Reports Summary Section -->
+        <section class="section reports-section">
+          <h2>Reports</h2>
+          <div id="report-summary-error" class="error-state hidden"></div>
+          <div id="report-summary-card" class="report-summary-card hidden">
+            <div class="report-summary-header">
+              <span class="report-summary-title" id="report-summary-title"></span>
+              <span class="report-summary-date" id="report-summary-date"></span>
+            </div>
+            <div class="report-summary-preview" id="report-summary-preview"></div>
+            <div class="report-summary-actions">
+              <button class="report-action-btn" onclick="openLatestReport()">Read latest report</button>
+              <button class="report-action-btn report-action-secondary" onclick="showAllReports()">View all reports</button>
+            </div>
+          </div>
+
+          <!-- Inline report detail (hidden by default) -->
+          <div id="report-detail-section" class="hidden">
+            <button class="blog-back" onclick="closeReportDetail()">&larr; Back to projects</button>
+            <div class="report-header">
+              <h2 id="report-detail-title"></h2>
+              <span class="report-date" id="report-detail-date"></span>
+            </div>
+            <div id="report-detail-body" class="markdown-body"></div>
+          </div>
+
+          <!-- Reports list (hidden by default) -->
+          <div id="reports-list-section" class="hidden">
+            <button class="blog-back" onclick="closeReportsList()">&larr; Back to projects</button>
+            <div id="reports-list" class="reports-list"></div>
+          </div>
+        </section>
       </div>
       <footer class="tab-footer">
         <a href="https://github.com/bh679/coo-agent" target="_blank">COO Agent Repo</a>
@@ -228,6 +286,7 @@
   <script src="lib/marked.min.js"></script>
   <script src="tabs/usage.js"></script>
   <script src="tabs/reports.js"></script>
+  <script src="tabs/projects.js"></script>
   <script src="tabs/ideas.js"></script>
   <script src="tabs/blog.js"></script>
   <script src="app.js"></script>
