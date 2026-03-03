@@ -189,6 +189,31 @@ capture and queue the feature context for the weekly blog agent.
 
 ---
 
+## Deployment Compatibility
+
+<!-- Deployment wiki: github.com/bh679/Claude-Management-Dashboard/wiki/Deployment-Pipeline -->
+
+The dashboard runs in **two environments** — ensure changes work in both.
+
+| | Local | Production (brennan.games/claudemd) |
+|---|---|---|
+| **Static files** | Express serves `public/` | Apache serves from `/opt/bitnami/apache/htdocs/ClaudeMD/` |
+| **API** | Express on port 8080 | Node.js via PM2 on port 3003, Apache reverse-proxies `/api/*` |
+| **Analytics** | `localhost:8080` | `127.0.0.1:3004` (via env vars) |
+| **Deploy** | `npm start` | Auto on push to `main` via webhook |
+
+### Rules for All Changes
+
+1. **Frontend paths** — always use relative paths in HTML/CSS/JS (e.g. `style.css`, not `/style.css` or `http://localhost:8080/style.css`)
+2. **API fetch paths** — use root-relative paths (`/api/...`). Apache proxies these to Node.js in production.
+3. **New API routes** — any new `/api/*` route needs a matching Apache proxy rule on the server. Flag this in the Gate 3 PR description.
+4. **Shell commands** — any `execSync` / `gh` calls must work on the Bitnami production server (gh must be authenticated there)
+5. **New environment variables** — must be added to the PM2 config on the server. Document new env vars in the Gate 3 PR description.
+6. **New npm dependencies** — auto-installed on deploy, but avoid native/binary deps that may not compile on the Bitnami Linux server
+7. **No hardcoded hosts/ports** — always use `process.env.PORT || 8080` pattern
+
+---
+
 ## Documentation
 
 After Gate 3 merge, update the relevant wiki:
