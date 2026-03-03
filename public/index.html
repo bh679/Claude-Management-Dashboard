@@ -14,6 +14,7 @@
         <button class="tab active" data-tab="usage">Usage</button>
         <button class="tab" data-tab="reports">Reports</button>
         <button class="tab" data-tab="ideas">Ideas</button>
+        <button class="tab" data-tab="blog">Blog</button>
       </div>
     </div>
   </nav>
@@ -136,12 +137,24 @@
       </div>
       <div id="ideas-list" class="ideas-grid hidden"></div>
     </div>
+
+    <!-- Blog Tab -->
+    <div id="tab-blog" class="tab-panel">
+      <div id="blog-loading" class="loading">Loading blog posts...</div>
+      <div id="blog-error" class="error-state hidden"></div>
+      <div id="blog-list" class="blog-grid hidden"></div>
+      <div id="blog-detail" class="hidden">
+        <button class="blog-back" onclick="closeBlogPost()">&larr; Back to posts</button>
+        <div id="blog-detail-body" class="markdown-body"></div>
+      </div>
+    </div>
   </main>
 
   <script src="lib/marked.min.js"></script>
   <script src="tabs/usage.js"></script>
   <script src="tabs/reports.js"></script>
   <script src="tabs/ideas.js"></script>
+  <script src="tabs/blog.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
