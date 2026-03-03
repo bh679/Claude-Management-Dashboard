@@ -1,5 +1,5 @@
 const express = require('express');
-const { execSync } = require('child_process');
+const { execSync, execFile } = require('child_process');
 const router = express.Router();
 
 // Parse a cron "0 21 * * 4" into the next occurrence
@@ -23,7 +23,36 @@ function getNextCronRun(cron) {
   return next.toISOString();
 }
 
-router.get('/runs', (req, res) => {
+// Fetch failure details for a single run (async, with timeout)
+function fetchFailureDetails(runId) {
+  return new Promise((resolve) => {
+    const child = execFile('gh', [
+      'run', 'view', String(runId),
+      '--repo', 'bh679/weekly-blog',
+      '--json', 'jobs'
+    ], { encoding: 'utf8', timeout: 5000 }, (err, stdout) => {
+      if (err) { resolve(null); return; }
+      try {
+        const jobsData = JSON.parse(stdout);
+        const failedSteps = [];
+        for (const job of (jobsData.jobs || [])) {
+          if (job.conclusion === 'failure') {
+            for (const step of (job.steps || [])) {
+              if (step.conclusion === 'failure') {
+                failedSteps.push(step.name);
+              }
+            }
+          }
+        }
+        resolve(failedSteps.length > 0 ? failedSteps.join(', ') : null);
+      } catch (e) {
+        resolve(null);
+      }
+    });
+  });
+}
+
+router.get('/runs', async (req, res) => {
   try {
     // 1. Fetch workflow YAML to get the cron schedule dynamically
     let cron = '0 21 * * 4'; // fallback
@@ -46,7 +75,7 @@ router.get('/runs', (req, res) => {
     );
     const runs = JSON.parse(runsJson);
 
-    // 3. For failed runs, fetch failure details
+    // 3. Build basic run data
     const enrichedRuns = runs.map(run => {
       const created = new Date(run.createdAt);
       const updated = new Date(run.updatedAt);
@@ -56,7 +85,7 @@ router.get('/runs', (req, res) => {
       const seconds = durationSec % 60;
       const duration = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
 
-      const result = {
+      return {
         id: run.databaseId,
         status: run.status,
         conclusion: run.conclusion,
@@ -65,33 +94,19 @@ router.get('/runs', (req, res) => {
         duration,
         url: run.url
       };
+    });
 
-      if (run.conclusion === 'failure') {
-        try {
-          const jobsJson = execSync(
-            `gh run view ${run.databaseId} --repo bh679/weekly-blog --json jobs`,
-            { encoding: 'utf8', timeout: 15000 }
-          );
-          const jobsData = JSON.parse(jobsJson);
-          const failedSteps = [];
-          for (const job of (jobsData.jobs || [])) {
-            if (job.conclusion === 'failure') {
-              for (const step of (job.steps || [])) {
-                if (step.conclusion === 'failure') {
-                  failedSteps.push(step.name);
-                }
-              }
-            }
-          }
-          if (failedSteps.length > 0) {
-            result.failureReason = failedSteps.join(', ');
-          }
-        } catch (e) {
-          // Couldn't fetch failure details — that's ok
-        }
+    // 4. Fetch failure details in parallel (non-blocking, 5s timeout each)
+    const failedRuns = enrichedRuns.filter(r => r.conclusion === 'failure');
+    const detailResults = await Promise.allSettled(
+      failedRuns.map(r => fetchFailureDetails(r.id))
+    );
+
+    failedRuns.forEach((run, i) => {
+      const result = detailResults[i];
+      if (result.status === 'fulfilled' && result.value) {
+        run.failureReason = result.value;
       }
-
-      return result;
     });
 
     res.json({
