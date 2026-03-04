@@ -13,6 +13,13 @@ async function loadProjectsData() {
 
     loading.classList.add('hidden');
 
+    if (data.error === 'schema_incompatible') {
+      error.textContent = 'Dashboard data format has changed. Please update the dashboard.';
+      error.title = data.message || '';
+      error.classList.remove('hidden');
+      return;
+    }
+
     if (!data.projects || !data.projects.length) {
       error.textContent = 'No project data available';
       error.classList.remove('hidden');
