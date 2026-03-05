@@ -23,11 +23,11 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 app.get('/api/version', (_req, res) => res.json({ version: pkg.version }));
 
 // API routes
-app.use('/api/scrape', proxyRoutes);
-app.use('/api/reports', reportsRoutes);
-app.use('/api/projects', projectsRoutes);
-app.use('/api/ideas', ideasRoutes);
-app.use('/api/blog', blogRoutes);
+app.use('/api/cmd/scrape', proxyRoutes);
+app.use('/api/cmd/reports', reportsRoutes);
+app.use('/api/cmd/projects', projectsRoutes);
+app.use('/api/cmd/ideas', ideasRoutes);
+app.use('/api/cmd/blog', blogRoutes);
 
 app.listen(PORT, () => {
   console.log(`Claude Management Dashboard running on http://localhost:${PORT}`);

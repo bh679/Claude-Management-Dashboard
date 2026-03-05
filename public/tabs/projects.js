@@ -8,7 +8,7 @@ async function loadProjectsData() {
   content.classList.add('hidden');
 
   try {
-    const res = await fetch('api/projects');
+    const res = await fetch('/api/cmd/projects');
     const data = await res.json();
 
     loading.classList.add('hidden');
@@ -99,7 +99,7 @@ async function loadReportSummary() {
   const reportError = document.getElementById('report-summary-error');
 
   try {
-    const res = await fetch('api/reports/latest');
+    const res = await fetch('/api/cmd/reports/latest');
     const data = await res.json();
 
     if (!data.markdown) {
@@ -150,7 +150,7 @@ async function showAllReports() {
   listSection.classList.remove('hidden');
 
   try {
-    const res = await fetch('api/reports/list');
+    const res = await fetch('/api/cmd/reports/list');
     const reports = await res.json();
 
     listContainer.innerHTML = reports.map(r => `
@@ -166,7 +166,7 @@ async function showAllReports() {
 
 async function openReport(filename) {
   try {
-    const res = await fetch('api/reports/latest');
+    const res = await fetch('/api/cmd/reports/latest');
     // For now just load latest — could add /api/reports/:filename endpoint later
     const data = await res.json();
     if (!data.markdown) return;
