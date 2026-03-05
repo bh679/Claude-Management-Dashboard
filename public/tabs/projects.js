@@ -8,13 +8,17 @@ async function loadProjectsData() {
   content.classList.add('hidden');
 
   try {
-    const [projectsRes, deploymentsRes] = await Promise.all([
+    const [projectsRes, deploymentsRes, repoStatsRes, pendingRes] = await Promise.all([
       fetch('/api/cmd/projects'),
-      fetch('/api/cmd/deployments').catch(() => null)
+      fetch('/api/cmd/deployments').catch(() => null),
+      fetch('/api/cmd/repo-stats').catch(() => null),
+      fetch('/api/cmd/pending-repos').catch(() => null)
     ]);
 
     const data = await projectsRes.json();
     const deployments = deploymentsRes ? await deploymentsRes.json() : {};
+    const repoStats = repoStatsRes ? await repoStatsRes.json() : {};
+    const pendingRepos = pendingRes ? await pendingRes.json() : [];
 
     loading.classList.add('hidden');
 
@@ -32,12 +36,14 @@ async function loadProjectsData() {
     }
 
     renderProjectsSummary(data.summary);
-    renderProjectCards(data.projects, deployments);
+    renderProjectCards(data.projects, deployments, repoStats);
+    renderPendingRepos(Array.isArray(pendingRepos) ? pendingRepos : [], data.projects || []);
     renderReportDate(data.report_date);
     content.classList.remove('hidden');
 
-    // Load report summary card
+    // Load report summary card and schedule
     loadReportSummary();
+    loadReportSchedule();
   } catch (err) {
     loading.classList.add('hidden');
     error.textContent = 'Failed to load projects: ' + err.message;
@@ -93,9 +99,13 @@ function renderDeploymentCard(repo, deployment) {
   const statusClass = getDeployStatusClass(deployment.status);
   const statusLabel = getDeployStatusLabel(deployment.status);
 
-  const liveLink = deployment.url
-    ? `<a class="deploy-link" href="${escapeHtml(deployment.url)}" target="_blank" onclick="event.stopPropagation();">${escapeHtml(deployment.url.replace(/^https?:\/\//, ''))}</a>`
-    : '';
+  const allUrls = [
+    ...(deployment.url ? [deployment.url] : []),
+    ...(deployment.additional_urls || [])
+  ];
+  const liveLink = allUrls.map(u =>
+    `<a class="deploy-link" href="${escapeHtml(u)}" target="_blank" onclick="event.stopPropagation();">${escapeHtml(u.replace(/^https?:\/\//, ''))}</a>`
+  ).join('');
 
   const serverInfo = deployment.server
     ? `<div class="deploy-server">
@@ -118,7 +128,49 @@ function renderDeploymentCard(repo, deployment) {
   `;
 }
 
-function renderProjectCards(projects, deployments) {
+function getContribLevel(count) {
+  if (count === 0) return 0;
+  if (count === 1) return 1;
+  if (count <= 4) return 2;
+  if (count <= 9) return 3;
+  return 4;
+}
+
+function renderContributionGraph(dailyCommits) {
+  if (!dailyCommits || dailyCommits.length === 0) {
+    return '<div class="contrib-graph contrib-empty"></div>';
+  }
+
+  const cells = dailyCommits.map(d => {
+    const level = getContribLevel(d.count);
+    const dateLabel = new Date(d.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const tooltip = d.count === 0 ? `${dateLabel}: No activity` : `${dateLabel}: ${d.count} commit${d.count !== 1 ? 's' : ''}`;
+    return `<div class="contrib-cell contrib-level-${level}" title="${tooltip}"></div>`;
+  });
+
+  const half = Math.ceil(cells.length / 2);
+  const row1 = cells.slice(0, half).join('');
+  const row2 = cells.slice(half).join('');
+
+  return `
+    <div class="contrib-graph">
+      <div class="contrib-row">${row1}</div>
+      <div class="contrib-row">${row2}</div>
+    </div>
+  `;
+}
+
+function getOpenTaskCount(stats) {
+  if (!stats || !stats.projectBoards) return null;
+  return stats.projectBoards.reduce((sum, b) => sum + b.openItems, 0);
+}
+
+function getProjectBoardUrl(stats) {
+  if (!stats || !stats.projectBoards || stats.projectBoards.length === 0) return null;
+  return stats.projectBoards[0].url;
+}
+
+function renderProjectCards(projects, deployments, repoStats) {
   const grid = document.getElementById('projects-grid');
   grid.innerHTML = projects.map(p => {
     const statusClass = getStatusClass(p.status);
@@ -131,23 +183,39 @@ function renderProjectCards(projects, deployments) {
     const lastCommitLabel = daysSince === 0 ? 'Today' : daysSince === 1 ? '1 day ago' : daysSince + ' days ago';
 
     const deployment = deployments[p.repo] || null;
+    const stats = repoStats ? repoStats[p.repo] : null;
+    const taskCount = getOpenTaskCount(stats);
+    const boardUrl = getProjectBoardUrl(stats);
+
+    const issuesLabel = stats ? stats.openIssues : '?';
+    const tasksLabel = taskCount != null ? taskCount : '?';
+
+    const boardItemCount = (stats ? stats.openIssues : 0) + (taskCount || 0);
+    const boardBadge = boardItemCount > 0 ? `<span class="board-badge">${boardItemCount}</span>` : '';
+    const boardLink = boardUrl
+      ? `<a class="project-board-link" href="${escapeHtml(boardUrl)}" target="_blank" onclick="event.stopPropagation();">Board${boardBadge}</a>`
+      : '';
 
     return `
       <div class="project-row">
-        <a class="project-card" href="https://github.com/${escapeHtml(p.repo)}" target="_blank">
+        <div class="project-card" onclick="window.open('https://github.com/${escapeHtml(p.repo)}', '_blank')" style="cursor:pointer">
           <div class="project-card-header">
             <span class="project-name">${escapeHtml(p.name)}</span>
+            ${boardLink}
             <span class="project-status-badge ${statusClass}">${escapeHtml(p.status_label)}</span>
           </div>
           <div class="project-description">${escapeHtml(p.description)}</div>
-          <div class="project-metrics">
-            <span class="project-metric">${p.metrics.commits_7d} commits</span>
-            <span class="project-metric">${p.metrics.merged_prs_7d} PRs merged</span>
-            <span class="project-metric">${p.metrics.open_prs} open PRs</span>
-            <span class="project-metric">Last: ${lastCommitLabel}</span>
+          <div class="project-activity">
+            ${renderContributionGraph(stats ? stats.dailyCommits : [])}
+            <div class="project-stats-row">
+              <span class="project-stat">${issuesLabel} issues</span>
+              <span class="project-stat">${tasksLabel} tasks</span>
+              <span class="project-stat">${p.metrics.open_prs} open PRs</span>
+              <span class="project-stat">Last: ${lastCommitLabel}</span>
+            </div>
           </div>
           ${risksHtml}
-        </a>
+        </div>
         ${renderDeploymentCard(p.repo, deployment)}
       </div>
     `;
@@ -245,4 +313,269 @@ async function openReport(filename) {
 function closeReportsList() {
   document.getElementById('reports-list-section').classList.add('hidden');
   document.getElementById('report-summary-card').classList.remove('hidden');
+}
+
+function renderPendingRepos(repos, trackedProjects) {
+  const section = document.getElementById('pending-repos-section');
+  const grid = document.getElementById('pending-repos-grid');
+  const countEl = document.getElementById('pending-repos-count');
+
+  // Store tracked projects for reject dropdown
+  window._trackedProjects = trackedProjects || [];
+
+  if (!repos.length) {
+    section.classList.add('hidden');
+    return;
+  }
+
+  countEl.textContent = repos.length + ' repo' + (repos.length === 1 ? '' : 's');
+
+  grid.innerHTML = repos.map(r => {
+    const repoName = r.repo.split('/').pop();
+    const lastCommit = formatRelativeDate(r.last_commit);
+    const discovered = formatRelativeDate(r.discovered_at);
+    const cardId = encodeRepoId(r.repo);
+    const descAttr = escapeAttr(r.description || '');
+
+    return `
+      <div class="pending-row" id="pending-${cardId}">
+        <div class="pending-card">
+          <div class="pending-card-header">
+            <a class="pending-card-name" href="https://github.com/${escapeHtml(r.repo)}" target="_blank" onclick="event.stopPropagation();">${escapeHtml(repoName)}</a>
+          </div>
+          <div class="pending-card-description">${escapeHtml(r.description || '')}</div>
+          <div class="pending-card-meta">
+            <span>Last commit: ${lastCommit}</span>
+            <span>Discovered: ${discovered}</span>
+          </div>
+        </div>
+        <div class="pending-actions" id="actions-${cardId}">
+          <span class="pending-badge">Pending</span>
+          <button class="pending-btn pending-btn-approve" onclick="approvePending('${escapeHtml(r.repo)}', '${descAttr}')">Approve</button>
+          <button class="pending-btn pending-btn-reject" onclick="showRejectForm('${escapeHtml(r.repo)}', '${descAttr}')">Reject</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  section.classList.remove('hidden');
+}
+
+function encodeRepoId(repo) {
+  return repo.replace(/\//g, '-');
+}
+
+function escapeAttr(str) {
+  return (str || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+
+async function approvePending(repo, description) {
+  const cardId = encodeRepoId(repo);
+  const card = document.getElementById('pending-' + cardId);
+  if (!card) return;
+
+  setCardLoading(card, true);
+
+  try {
+    const res = await fetch('/api/cmd/pending-repos/approve', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ repo, description })
+    });
+    const result = await res.json();
+
+    if (!res.ok) {
+      showPendingStatus('error', result.message || 'Approval failed');
+      setCardLoading(card, false);
+      return;
+    }
+
+    card.classList.add('pending-card-removing');
+    setTimeout(() => {
+      card.remove();
+      updatePendingCount();
+      showPendingStatus('success', repo.split('/')[1] + ' approved and now tracked');
+    }, 300);
+  } catch (err) {
+    showPendingStatus('error', 'Network error: ' + err.message);
+    setCardLoading(card, false);
+  }
+}
+
+function showRejectForm(repo, description) {
+  const cardId = encodeRepoId(repo);
+  const actionsDiv = document.getElementById('actions-' + cardId);
+  if (!actionsDiv) return;
+
+  // Store original HTML for cancel
+  window['_rejectOriginal_' + cardId] = actionsDiv.innerHTML;
+
+  const trackedOptions = (window._trackedProjects || [])
+    .map(t => `<option value="${escapeHtml(t.repo)}">${escapeHtml(t.name || t.repo.split('/')[1])}</option>`)
+    .join('');
+
+  actionsDiv.classList.add('pending-actions-expanded');
+  actionsDiv.innerHTML = `
+    <div class="reject-form">
+      <input class="reject-reason-input" type="text" placeholder="Reason (optional)" id="reject-reason-${cardId}">
+      <div class="reject-replaced-row">
+        <label class="reject-label">Replaced by:</label>
+        <select class="reject-select" id="reject-replaced-${cardId}">
+          <option value="">None</option>
+          ${trackedOptions}
+        </select>
+      </div>
+      <div class="reject-form-actions">
+        <button class="pending-btn pending-btn-reject-confirm" onclick="confirmReject('${escapeHtml(repo)}', '${escapeAttr(description)}')">Confirm Reject</button>
+        <button class="pending-btn pending-btn-cancel" onclick="cancelReject('${escapeHtml(repo)}')">Cancel</button>
+      </div>
+    </div>
+  `;
+}
+
+function cancelReject(repo) {
+  const cardId = encodeRepoId(repo);
+  const actionsDiv = document.getElementById('actions-' + cardId);
+  const key = '_rejectOriginal_' + cardId;
+  if (actionsDiv && window[key]) {
+    actionsDiv.innerHTML = window[key];
+    actionsDiv.classList.remove('pending-actions-expanded');
+  }
+  delete window[key];
+}
+
+async function confirmReject(repo, description) {
+  const cardId = encodeRepoId(repo);
+  const card = document.getElementById('pending-' + cardId);
+  if (!card) return;
+
+  const reasonInput = document.getElementById('reject-reason-' + cardId);
+  const replacedSelect = document.getElementById('reject-replaced-' + cardId);
+  const reason = reasonInput ? reasonInput.value.trim() : '';
+  const replacedBy = replacedSelect ? replacedSelect.value : '';
+
+  setCardLoading(card, true);
+
+  try {
+    const body = { repo, description };
+    if (reason) body.reason = reason;
+    if (replacedBy) body.replacedBy = replacedBy;
+
+    const res = await fetch('/api/cmd/pending-repos/reject', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const result = await res.json();
+
+    if (!res.ok) {
+      showPendingStatus('error', result.message || 'Rejection failed');
+      setCardLoading(card, false);
+      return;
+    }
+
+    card.classList.add('pending-card-removing');
+    setTimeout(() => {
+      card.remove();
+      updatePendingCount();
+      showPendingStatus('success', repo.split('/')[1] + ' rejected and moved to untracked');
+    }, 300);
+  } catch (err) {
+    showPendingStatus('error', 'Network error: ' + err.message);
+    setCardLoading(card, false);
+  }
+}
+
+function setCardLoading(card, loading) {
+  if (!card) return;
+  const buttons = card.querySelectorAll('button');
+  buttons.forEach(function(btn) { btn.disabled = loading; });
+  card.classList.toggle('pending-card-loading', loading);
+}
+
+function updatePendingCount() {
+  const grid = document.getElementById('pending-repos-grid');
+  const section = document.getElementById('pending-repos-section');
+  const countEl = document.getElementById('pending-repos-count');
+  const remaining = grid.querySelectorAll('.pending-row').length;
+
+  if (remaining === 0) {
+    section.classList.add('hidden');
+  } else {
+    countEl.textContent = remaining + ' repo' + (remaining === 1 ? '' : 's');
+  }
+}
+
+function showPendingStatus(type, message) {
+  const el = document.getElementById('pending-action-status');
+  if (!el) return;
+  el.textContent = message;
+  el.className = 'pending-action-status pending-status-' + type;
+  el.classList.remove('hidden');
+  setTimeout(function() { el.classList.add('hidden'); }, 5000);
+}
+
+function formatRelativeDate(isoDate) {
+  if (!isoDate) return 'Unknown';
+  const date = new Date(isoDate);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return '1 day ago';
+  if (diffDays < 30) return diffDays + ' days ago';
+  const diffMonths = Math.floor(diffDays / 30);
+  if (diffMonths === 1) return '1 month ago';
+  return diffMonths + ' months ago';
+}
+
+function formatReportDate(date) {
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+  if (date.toDateString() === today.toDateString()) return 'today';
+  if (date.toDateString() === tomorrow.toDateString()) return 'tomorrow';
+  return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+async function loadReportSchedule() {
+  const el = document.getElementById('reports-schedule');
+  if (!el) return;
+
+  try {
+    const res = await fetch('/api/cmd/reports/list');
+    const reports = await res.json();
+
+    if (!reports || reports.length === 0) return;
+
+    reports.sort((a, b) => b.date.localeCompare(a.date));
+    const lastDate = new Date(reports[0].date);
+
+    let frequencyLabel = 'weekly';
+    let frequencyDays = 7;
+
+    if (reports.length >= 2) {
+      const gaps = [];
+      for (let i = 0; i < reports.length - 1; i++) {
+        const d1 = new Date(reports[i].date);
+        const d2 = new Date(reports[i + 1].date);
+        gaps.push((d1 - d2) / (1000 * 60 * 60 * 24));
+      }
+      const avgGap = gaps.reduce((s, g) => s + g, 0) / gaps.length;
+      frequencyDays = Math.round(avgGap);
+      if (frequencyDays <= 1) frequencyLabel = 'daily';
+      else if (frequencyDays <= 7) frequencyLabel = 'weekly';
+      else if (frequencyDays <= 14) frequencyLabel = 'bi-weekly';
+      else frequencyLabel = 'monthly';
+    }
+
+    const nextRun = new Date(lastDate);
+    nextRun.setDate(nextRun.getDate() + frequencyDays);
+
+    el.textContent = `Runs ${frequencyLabel} · Next: ${formatReportDate(nextRun)}`;
+    el.classList.remove('hidden');
+  } catch (err) {
+    // schedule subheading is optional — silently skip on error
+  }
 }
