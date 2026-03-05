@@ -94,7 +94,7 @@ function renderDeploymentCard(repo, deployment) {
   const statusLabel = getDeployStatusLabel(deployment.status);
 
   const liveLink = deployment.url
-    ? `<a class="deploy-link" href="${escapeHtml(deployment.url)}" target="_blank" onclick="event.stopPropagation();">Visit Site</a>`
+    ? `<a class="deploy-link" href="${escapeHtml(deployment.url)}" target="_blank" onclick="event.stopPropagation();">${escapeHtml(deployment.url.replace(/^https?:\/\//, ''))}</a>`
     : '';
 
   const serverInfo = deployment.server
