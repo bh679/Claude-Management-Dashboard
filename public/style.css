@@ -893,6 +893,20 @@ body {
   border-bottom: none;
 }
 
+.reports-section-header {
+  margin-bottom: 16px;
+}
+
+.reports-section-header h2 {
+  margin-bottom: 4px;
+}
+
+.reports-schedule {
+  font-size: 13px;
+  color: #888;
+  margin: 0;
+}
+
 .report-summary-card {
   background: #2a2a2a;
   border: 1px solid #333;
