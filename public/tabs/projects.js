@@ -8,8 +8,13 @@ async function loadProjectsData() {
   content.classList.add('hidden');
 
   try {
-    const res = await fetch('/api/cmd/projects');
-    const data = await res.json();
+    const [projectsRes, deploymentsRes] = await Promise.all([
+      fetch('/api/cmd/projects'),
+      fetch('/api/cmd/deployments').catch(() => null)
+    ]);
+
+    const data = await projectsRes.json();
+    const deployments = deploymentsRes ? await deploymentsRes.json() : {};
 
     loading.classList.add('hidden');
 
@@ -27,7 +32,7 @@ async function loadProjectsData() {
     }
 
     renderProjectsSummary(data.summary);
-    renderProjectCards(data.projects);
+    renderProjectCards(data.projects, deployments);
     renderReportDate(data.report_date);
     content.classList.remove('hidden');
 
@@ -62,7 +67,58 @@ function getStatusClass(status) {
   return '';
 }
 
-function renderProjectCards(projects) {
+function getDeployStatusClass(status) {
+  if (status === 'live') return 'deploy-live';
+  if (status === 'error') return 'deploy-error';
+  if (status === 'offline') return 'deploy-offline';
+  return 'deploy-none';
+}
+
+function getDeployStatusLabel(status) {
+  if (status === 'live') return 'Live';
+  if (status === 'error') return 'Error';
+  if (status === 'offline') return 'Offline';
+  return 'Not Deployed';
+}
+
+function renderDeploymentCard(repo, deployment) {
+  if (!deployment) {
+    return `
+      <div class="deployment-card deploy-none">
+        <span class="deploy-status-badge deploy-none">Not Deployed</span>
+      </div>
+    `;
+  }
+
+  const statusClass = getDeployStatusClass(deployment.status);
+  const statusLabel = getDeployStatusLabel(deployment.status);
+
+  const liveLink = deployment.url
+    ? `<a class="deploy-link" href="${escapeHtml(deployment.url)}" target="_blank" onclick="event.stopPropagation();">Visit Site</a>`
+    : '';
+
+  const serverInfo = deployment.server
+    ? `<div class="deploy-server">
+        <a class="deploy-server-link" href="${escapeHtml(deployment.server_url)}" target="_blank" onclick="event.stopPropagation();">${escapeHtml(deployment.server)}</a>
+        ${deployment.region ? `<span class="deploy-region">${escapeHtml(deployment.region)}</span>` : ''}
+      </div>`
+    : '';
+
+  const responseTime = deployment.responseTime != null
+    ? `<span class="deploy-response-time">${deployment.responseTime}ms</span>`
+    : '';
+
+  return `
+    <div class="deployment-card ${statusClass}">
+      <span class="deploy-status-badge ${statusClass}">${statusLabel}</span>
+      ${responseTime}
+      ${liveLink}
+      ${serverInfo}
+    </div>
+  `;
+}
+
+function renderProjectCards(projects, deployments) {
   const grid = document.getElementById('projects-grid');
   grid.innerHTML = projects.map(p => {
     const statusClass = getStatusClass(p.status);
@@ -74,21 +130,26 @@ function renderProjectCards(projects) {
     const daysSince = p.metrics.days_since_last_commit;
     const lastCommitLabel = daysSince === 0 ? 'Today' : daysSince === 1 ? '1 day ago' : daysSince + ' days ago';
 
+    const deployment = deployments[p.repo] || null;
+
     return `
-      <a class="project-card" href="https://github.com/${escapeHtml(p.repo)}" target="_blank">
-        <div class="project-card-header">
-          <span class="project-name">${escapeHtml(p.name)}</span>
-          <span class="project-status-badge ${statusClass}">${escapeHtml(p.status_label)}</span>
-        </div>
-        <div class="project-description">${escapeHtml(p.description)}</div>
-        <div class="project-metrics">
-          <span class="project-metric">${p.metrics.commits_7d} commits</span>
-          <span class="project-metric">${p.metrics.merged_prs_7d} PRs merged</span>
-          <span class="project-metric">${p.metrics.open_prs} open PRs</span>
-          <span class="project-metric">Last: ${lastCommitLabel}</span>
-        </div>
-        ${risksHtml}
-      </a>
+      <div class="project-row">
+        <a class="project-card" href="https://github.com/${escapeHtml(p.repo)}" target="_blank">
+          <div class="project-card-header">
+            <span class="project-name">${escapeHtml(p.name)}</span>
+            <span class="project-status-badge ${statusClass}">${escapeHtml(p.status_label)}</span>
+          </div>
+          <div class="project-description">${escapeHtml(p.description)}</div>
+          <div class="project-metrics">
+            <span class="project-metric">${p.metrics.commits_7d} commits</span>
+            <span class="project-metric">${p.metrics.merged_prs_7d} PRs merged</span>
+            <span class="project-metric">${p.metrics.open_prs} open PRs</span>
+            <span class="project-metric">Last: ${lastCommitLabel}</span>
+          </div>
+          ${risksHtml}
+        </a>
+        ${renderDeploymentCard(p.repo, deployment)}
+      </div>
     `;
   }).join('');
 }

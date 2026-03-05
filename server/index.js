@@ -6,6 +6,7 @@ const reportsRoutes = require('./routes/reports');
 const projectsRoutes = require('./routes/projects');
 const ideasRoutes = require('./routes/ideas');
 const blogRoutes = require('./routes/blog');
+const deploymentsRoutes = require('./routes/deployments');
 
 const pkg = require('../package.json');
 
@@ -28,6 +29,7 @@ app.use('/api/cmd/reports', reportsRoutes);
 app.use('/api/cmd/projects', projectsRoutes);
 app.use('/api/cmd/ideas', ideasRoutes);
 app.use('/api/cmd/blog', blogRoutes);
+app.use('/api/cmd/deployments', deploymentsRoutes);
 
 app.listen(PORT, () => {
   console.log(`Claude Management Dashboard running on http://localhost:${PORT}`);
