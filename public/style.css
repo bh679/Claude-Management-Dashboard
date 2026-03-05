@@ -551,7 +551,15 @@ body {
   color: #888;
 }
 
+.pending-row {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+  transition: opacity 0.3s, transform 0.3s;
+}
+
 .pending-card {
+  flex: 1;
   display: block;
   background: #2a2a2a;
   border: 1px solid #333;
@@ -578,6 +586,12 @@ body {
 .pending-card-name {
   font-size: 15px;
   font-weight: 600;
+  color: inherit;
+  text-decoration: none;
+}
+
+.pending-card-name:hover {
+  text-decoration: underline;
 }
 
 .pending-badge {
@@ -589,6 +603,12 @@ body {
   white-space: nowrap;
   background: rgba(106, 122, 138, 0.2);
   color: #8a9aaa;
+  margin-bottom: 4px;
+}
+
+.pending-actions.pending-actions-expanded {
+  width: auto;
+  min-width: 250px;
 }
 
 .pending-card-description {
@@ -606,6 +626,157 @@ body {
 .pending-card-meta span {
   font-size: 13px;
   color: #666;
+}
+
+.pending-row.pending-card-removing {
+  opacity: 0;
+  transform: translateX(20px);
+}
+
+.pending-row.pending-card-loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.pending-actions {
+  width: 140px;
+  flex-shrink: 0;
+  background: #2a2a2a;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+}
+
+.pending-btn {
+  padding: 6px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid #444;
+  background: #333;
+  transition: background 0.2s, border-color 0.2s;
+  width: 100%;
+  text-align: center;
+}
+
+.pending-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pending-btn-approve {
+  color: #5ba8a0;
+}
+
+.pending-btn-approve:hover:not(:disabled) {
+  background: rgba(91, 168, 160, 0.15);
+  border-color: #5ba8a0;
+}
+
+.pending-btn-reject {
+  color: #e07070;
+}
+
+.pending-btn-reject:hover:not(:disabled) {
+  background: rgba(224, 112, 112, 0.15);
+  border-color: #e07070;
+}
+
+.pending-btn-reject-confirm {
+  color: #e07070;
+}
+
+.pending-btn-reject-confirm:hover:not(:disabled) {
+  background: rgba(224, 112, 112, 0.15);
+  border-color: #e07070;
+}
+
+.pending-btn-cancel {
+  color: #888;
+}
+
+.pending-btn-cancel:hover:not(:disabled) {
+  color: #ccc;
+  background: #3a3a3a;
+}
+
+.reject-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.reject-reason-input {
+  background: #1a1a1a;
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 6px 12px;
+  color: #e8e8e8;
+  font-size: 14px;
+}
+
+.reject-reason-input:focus {
+  outline: none;
+  border-color: #5ba8a0;
+}
+
+.reject-replaced-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.reject-label {
+  font-size: 13px;
+  color: #888;
+  white-space: nowrap;
+}
+
+.reject-select {
+  background: #1a1a1a;
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 6px 12px;
+  color: #e8e8e8;
+  font-size: 14px;
+  flex: 1;
+}
+
+.reject-select:focus {
+  outline: none;
+  border-color: #5ba8a0;
+}
+
+.reject-form-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.pending-action-status {
+  margin-top: 12px;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: opacity 0.3s;
+}
+
+.pending-status-success {
+  background: rgba(91, 168, 160, 0.1);
+  color: #5ba8a0;
+  border: 1px solid rgba(91, 168, 160, 0.3);
+}
+
+.pending-status-error {
+  background: rgba(224, 112, 112, 0.1);
+  color: #e07070;
+  border: 1px solid rgba(224, 112, 112, 0.3);
 }
 
 /* Deployment Card */
