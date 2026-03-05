@@ -41,8 +41,9 @@ async function loadProjectsData() {
     renderReportDate(data.report_date);
     content.classList.remove('hidden');
 
-    // Load report summary card
+    // Load report summary card and schedule
     loadReportSummary();
+    loadReportSchedule();
   } catch (err) {
     loading.classList.add('hidden');
     error.textContent = 'Failed to load projects: ' + err.message;
@@ -527,4 +528,54 @@ function formatRelativeDate(isoDate) {
   const diffMonths = Math.floor(diffDays / 30);
   if (diffMonths === 1) return '1 month ago';
   return diffMonths + ' months ago';
+}
+
+function formatReportDate(date) {
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+  if (date.toDateString() === today.toDateString()) return 'today';
+  if (date.toDateString() === tomorrow.toDateString()) return 'tomorrow';
+  return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+async function loadReportSchedule() {
+  const el = document.getElementById('reports-schedule');
+  if (!el) return;
+
+  try {
+    const res = await fetch('/api/cmd/reports/list');
+    const reports = await res.json();
+
+    if (!reports || reports.length === 0) return;
+
+    reports.sort((a, b) => b.date.localeCompare(a.date));
+    const lastDate = new Date(reports[0].date);
+
+    let frequencyLabel = 'weekly';
+    let frequencyDays = 7;
+
+    if (reports.length >= 2) {
+      const gaps = [];
+      for (let i = 0; i < reports.length - 1; i++) {
+        const d1 = new Date(reports[i].date);
+        const d2 = new Date(reports[i + 1].date);
+        gaps.push((d1 - d2) / (1000 * 60 * 60 * 24));
+      }
+      const avgGap = gaps.reduce((s, g) => s + g, 0) / gaps.length;
+      frequencyDays = Math.round(avgGap);
+      if (frequencyDays <= 1) frequencyLabel = 'daily';
+      else if (frequencyDays <= 7) frequencyLabel = 'weekly';
+      else if (frequencyDays <= 14) frequencyLabel = 'bi-weekly';
+      else frequencyLabel = 'monthly';
+    }
+
+    const nextRun = new Date(lastDate);
+    nextRun.setDate(nextRun.getDate() + frequencyDays);
+
+    el.textContent = `Runs ${frequencyLabel} · Next: ${formatReportDate(nextRun)}`;
+    el.classList.remove('hidden');
+  } catch (err) {
+    // schedule subheading is optional — silently skip on error
+  }
 }
