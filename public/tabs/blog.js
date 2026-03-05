@@ -14,7 +14,7 @@ async function loadBlogData() {
   content.classList.add('hidden');
 
   try {
-    const res = await fetch('/api/blog/runs');
+    const res = await fetch('api/blog/runs');
     const data = await res.json();
 
     loading.classList.add('hidden');

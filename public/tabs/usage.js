@@ -1,6 +1,6 @@
 async function loadUsageData() {
   try {
-    const res = await fetch('/api/scrape/latest');
+    const res = await fetch('api/scrape/latest');
     const snapshot = await res.json();
 
     if (!snapshot || snapshot.error || snapshot.data === null) {
