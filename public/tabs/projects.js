@@ -287,6 +287,7 @@ function renderPendingRepos(repos, trackedProjects) {
         <div class="pending-actions" id="actions-${cardId}">
           <span class="pending-badge">Pending</span>
           <button class="pending-btn pending-btn-approve" onclick="approvePending('${escapeHtml(r.repo)}', '${descAttr}')">Approve</button>
+          <button class="pending-btn pending-btn-subproject" onclick="showSubProjectForm('${escapeHtml(r.repo)}', '${descAttr}')">Sub-Project</button>
           <button class="pending-btn pending-btn-reject" onclick="showRejectForm('${escapeHtml(r.repo)}', '${descAttr}')">Reject</button>
         </div>
       </div>
@@ -414,6 +415,90 @@ async function confirmReject(repo, description) {
       card.remove();
       updatePendingCount();
       showPendingStatus('success', repo.split('/')[1] + ' rejected and moved to untracked');
+    }, 300);
+  } catch (err) {
+    showPendingStatus('error', 'Network error: ' + err.message);
+    setCardLoading(card, false);
+  }
+}
+
+function showSubProjectForm(repo, description) {
+  const cardId = encodeRepoId(repo);
+  const actionsDiv = document.getElementById('actions-' + cardId);
+  if (!actionsDiv) return;
+
+  // Store original HTML for cancel
+  window['_subprojectOriginal_' + cardId] = actionsDiv.innerHTML;
+
+  const trackedOptions = (window._trackedProjects || [])
+    .map(t => `<option value="${escapeHtml(t.repo)}">${escapeHtml(t.name || t.repo.split('/')[1])}</option>`)
+    .join('');
+
+  actionsDiv.classList.add('pending-actions-expanded');
+  actionsDiv.innerHTML = `
+    <div class="reject-form">
+      <div class="reject-replaced-row">
+        <label class="reject-label">Parent:</label>
+        <select class="reject-select" id="subproject-parent-${cardId}">
+          <option value="">Select parent...</option>
+          ${trackedOptions}
+        </select>
+      </div>
+      <div class="reject-form-actions">
+        <button class="pending-btn pending-btn-subproject-confirm" onclick="confirmSubProject('${escapeHtml(repo)}', '${escapeAttr(description)}')">Confirm</button>
+        <button class="pending-btn pending-btn-cancel" onclick="cancelSubProject('${escapeHtml(repo)}')">Cancel</button>
+      </div>
+    </div>
+  `;
+}
+
+function cancelSubProject(repo) {
+  const cardId = encodeRepoId(repo);
+  const actionsDiv = document.getElementById('actions-' + cardId);
+  const key = '_subprojectOriginal_' + cardId;
+  if (actionsDiv && window[key]) {
+    actionsDiv.innerHTML = window[key];
+    actionsDiv.classList.remove('pending-actions-expanded');
+  }
+  delete window[key];
+}
+
+async function confirmSubProject(repo, description) {
+  const cardId = encodeRepoId(repo);
+  const card = document.getElementById('pending-' + cardId);
+  if (!card) return;
+
+  const parentSelect = document.getElementById('subproject-parent-' + cardId);
+  const parent = parentSelect ? parentSelect.value : '';
+
+  if (!parent) {
+    showPendingStatus('error', 'Please select a parent project');
+    return;
+  }
+
+  setCardLoading(card, true);
+
+  try {
+    const res = await fetch('/api/cmd/pending-repos/add-sub-project', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ repo, description, parent })
+    });
+    const result = await res.json();
+
+    if (!res.ok) {
+      showPendingStatus('error', result.message || 'Sub-project addition failed');
+      setCardLoading(card, false);
+      return;
+    }
+
+    card.classList.add('pending-card-removing');
+    setTimeout(() => {
+      card.remove();
+      updatePendingCount();
+      const repoName = repo.split('/')[1];
+      const parentName = parent.split('/')[1];
+      showPendingStatus('success', repoName + ' added as sub-project of ' + parentName);
     }, 300);
   } catch (err) {
     showPendingStatus('error', 'Network error: ' + err.message);
