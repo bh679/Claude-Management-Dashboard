@@ -7,6 +7,8 @@ const projectsRoutes = require('./routes/projects');
 const ideasRoutes = require('./routes/ideas');
 const blogRoutes = require('./routes/blog');
 
+const pkg = require('../package.json');
+
 const PORT = process.env.PORT || 8080;
 
 const app = express();
@@ -16,6 +18,9 @@ app.use(express.json());
 
 // Serve static dashboard files
 app.use(express.static(path.join(__dirname, '..', 'public')));
+
+// Version endpoint
+app.get('/api/version', (_req, res) => res.json({ version: pkg.version }));
 
 // API routes
 app.use('/api/scrape', proxyRoutes);
