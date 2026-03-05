@@ -8,13 +8,15 @@ async function loadProjectsData() {
   content.classList.add('hidden');
 
   try {
-    const [projectsRes, deploymentsRes] = await Promise.all([
+    const [projectsRes, deploymentsRes, pendingRes] = await Promise.all([
       fetch('/api/cmd/projects'),
-      fetch('/api/cmd/deployments').catch(() => null)
+      fetch('/api/cmd/deployments').catch(() => null),
+      fetch('/api/cmd/pending-repos').catch(() => null)
     ]);
 
     const data = await projectsRes.json();
     const deployments = deploymentsRes ? await deploymentsRes.json() : {};
+    const pendingRepos = pendingRes ? await pendingRes.json() : [];
 
     loading.classList.add('hidden');
 
@@ -33,6 +35,7 @@ async function loadProjectsData() {
 
     renderProjectsSummary(data.summary);
     renderProjectCards(data.projects, deployments);
+    renderPendingRepos(Array.isArray(pendingRepos) ? pendingRepos : []);
     renderReportDate(data.report_date);
     content.classList.remove('hidden');
 
@@ -245,4 +248,54 @@ async function openReport(filename) {
 function closeReportsList() {
   document.getElementById('reports-list-section').classList.add('hidden');
   document.getElementById('report-summary-card').classList.remove('hidden');
+}
+
+function renderPendingRepos(repos) {
+  const section = document.getElementById('pending-repos-section');
+  const grid = document.getElementById('pending-repos-grid');
+  const countEl = document.getElementById('pending-repos-count');
+
+  if (!repos.length) {
+    section.classList.add('hidden');
+    return;
+  }
+
+  countEl.textContent = repos.length + ' repo' + (repos.length === 1 ? '' : 's');
+
+  grid.innerHTML = repos.map(r => {
+    const repoName = r.repo.split('/').pop();
+    const lastCommit = formatRelativeDate(r.last_commit);
+    const discovered = formatRelativeDate(r.discovered_at);
+
+    return `
+      <a class="pending-card" href="https://github.com/${escapeHtml(r.repo)}" target="_blank">
+        <div class="pending-card-header">
+          <span class="pending-card-name">${escapeHtml(repoName)}</span>
+          <span class="pending-badge">Pending</span>
+        </div>
+        <div class="pending-card-description">${escapeHtml(r.description || '')}</div>
+        <div class="pending-card-meta">
+          <span>Last commit: ${lastCommit}</span>
+          <span>Discovered: ${discovered}</span>
+        </div>
+      </a>
+    `;
+  }).join('');
+
+  section.classList.remove('hidden');
+}
+
+function formatRelativeDate(isoDate) {
+  if (!isoDate) return 'Unknown';
+  const date = new Date(isoDate);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return '1 day ago';
+  if (diffDays < 30) return diffDays + ' days ago';
+  const diffMonths = Math.floor(diffDays / 30);
+  if (diffMonths === 1) return '1 month ago';
+  return diffMonths + ' months ago';
 }
