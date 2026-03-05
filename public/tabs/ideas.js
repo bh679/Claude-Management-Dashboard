@@ -10,7 +10,7 @@ async function loadIdeasData() {
   list.classList.add('hidden');
 
   try {
-    const res = await fetch('/api/ideas');
+    const res = await fetch('api/ideas');
     const items = await res.json();
 
     loading.classList.add('hidden');
