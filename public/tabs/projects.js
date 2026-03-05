@@ -287,7 +287,7 @@ function renderPendingRepos(repos, trackedProjects) {
         <div class="pending-actions" id="actions-${cardId}">
           <span class="pending-badge">Pending</span>
           <button class="pending-btn pending-btn-approve" onclick="approvePending('${escapeHtml(r.repo)}', '${descAttr}')">Approve</button>
-          <button class="pending-btn pending-btn-subproject" onclick="showSubProjectForm('${escapeHtml(r.repo)}', '${descAttr}')">Sub-Project</button>
+          <button class="pending-btn pending-btn-subproject" onclick="showSubProjectForm('${escapeHtml(r.repo)}', '${descAttr}')">Add Parent</button>
           <button class="pending-btn pending-btn-reject" onclick="showRejectForm('${escapeHtml(r.repo)}', '${descAttr}')">Reject</button>
         </div>
       </div>
@@ -498,7 +498,7 @@ async function confirmSubProject(repo, description) {
       updatePendingCount();
       const repoName = repo.split('/')[1];
       const parentName = parent.split('/')[1];
-      showPendingStatus('success', repoName + ' added as sub-project of ' + parentName);
+      showPendingStatus('success', repoName + ' tracked with parent ' + parentName);
     }, 300);
   } catch (err) {
     showPendingStatus('error', 'Network error: ' + err.message);
