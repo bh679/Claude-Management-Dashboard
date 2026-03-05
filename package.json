@@ -1,6 +1,8 @@
 {
   "name": "claude-management-dashboard",
-  "version": "1.04.0001",
+  "version": "1.04.0002",
+  "requiredAnalyticsVersion": "1.01",
+  "requiredDashboardSchema": "1.0",
   "description": "Parent orchestrator for the Claude Management Dashboard suite. Tabbed dashboard with Usage Analytics, Project Reports, and Ideas views.",
   "main": "server/index.js",
   "scripts": {

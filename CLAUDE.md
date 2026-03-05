@@ -161,6 +161,26 @@ Update `package.json` version field on every commit.
 
 ---
 
+## Git Hooks
+
+### Pre-commit Version Check
+
+A pre-commit hook enforces the V.MM.PPPP versioning standard. It rejects commits where:
+- `package.json` version was not bumped
+- Version format doesn't match `V.MM.PPPP`
+
+**Installation** (required once per clone — hook lives in `.git/hooks/` which is not tracked):
+
+```bash
+cp ~/Projects/Claude\ Templates/standards/hooks/pre-commit-version-check.sh .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```
+
+> **Note:** In worktrees, hooks are shared from the main repo's `.git/hooks/` directory.
+> Install the hook in the main repo and it applies to all worktrees automatically.
+
+---
+
 ## Testing
 
 <!-- Full procedure: github.com/bh679/claude-templates/standards/workflow.md#gate-2 -->

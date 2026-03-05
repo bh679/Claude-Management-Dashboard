@@ -8,10 +8,17 @@ async function loadProjectsData() {
   content.classList.add('hidden');
 
   try {
-    const res = await fetch('/api/projects');
+    const res = await fetch('api/projects');
     const data = await res.json();
 
     loading.classList.add('hidden');
+
+    if (data.error === 'schema_incompatible') {
+      error.textContent = 'Dashboard data format has changed. Please update the dashboard.';
+      error.title = data.message || '';
+      error.classList.remove('hidden');
+      return;
+    }
 
     if (!data.projects || !data.projects.length) {
       error.textContent = 'No project data available';
@@ -92,7 +99,7 @@ async function loadReportSummary() {
   const reportError = document.getElementById('report-summary-error');
 
   try {
-    const res = await fetch('/api/reports/latest');
+    const res = await fetch('api/reports/latest');
     const data = await res.json();
 
     if (!data.markdown) {
@@ -143,7 +150,7 @@ async function showAllReports() {
   listSection.classList.remove('hidden');
 
   try {
-    const res = await fetch('/api/reports/list');
+    const res = await fetch('api/reports/list');
     const reports = await res.json();
 
     listContainer.innerHTML = reports.map(r => `
@@ -159,7 +166,7 @@ async function showAllReports() {
 
 async function openReport(filename) {
   try {
-    const res = await fetch('/api/reports/latest');
+    const res = await fetch('api/reports/latest');
     // For now just load latest — could add /api/reports/:filename endpoint later
     const data = await res.json();
     if (!data.markdown) return;
