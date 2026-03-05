@@ -8,14 +8,16 @@ async function loadProjectsData() {
   content.classList.add('hidden');
 
   try {
-    const [projectsRes, deploymentsRes, pendingRes] = await Promise.all([
+    const [projectsRes, deploymentsRes, repoStatsRes, pendingRes] = await Promise.all([
       fetch('/api/cmd/projects'),
       fetch('/api/cmd/deployments').catch(() => null),
+      fetch('/api/cmd/repo-stats').catch(() => null),
       fetch('/api/cmd/pending-repos').catch(() => null)
     ]);
 
     const data = await projectsRes.json();
     const deployments = deploymentsRes ? await deploymentsRes.json() : {};
+    const repoStats = repoStatsRes ? await repoStatsRes.json() : {};
     const pendingRepos = pendingRes ? await pendingRes.json() : [];
 
     loading.classList.add('hidden');
@@ -34,7 +36,7 @@ async function loadProjectsData() {
     }
 
     renderProjectsSummary(data.summary);
-    renderProjectCards(data.projects, deployments);
+    renderProjectCards(data.projects, deployments, repoStats);
     renderPendingRepos(Array.isArray(pendingRepos) ? pendingRepos : [], data.projects || []);
     renderReportDate(data.report_date);
     content.classList.remove('hidden');
@@ -125,7 +127,49 @@ function renderDeploymentCard(repo, deployment) {
   `;
 }
 
-function renderProjectCards(projects, deployments) {
+function getContribLevel(count) {
+  if (count === 0) return 0;
+  if (count === 1) return 1;
+  if (count <= 4) return 2;
+  if (count <= 9) return 3;
+  return 4;
+}
+
+function renderContributionGraph(dailyCommits) {
+  if (!dailyCommits || dailyCommits.length === 0) {
+    return '<div class="contrib-graph contrib-empty"></div>';
+  }
+
+  const cells = dailyCommits.map(d => {
+    const level = getContribLevel(d.count);
+    const dateLabel = new Date(d.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const tooltip = d.count === 0 ? `${dateLabel}: No activity` : `${dateLabel}: ${d.count} commit${d.count !== 1 ? 's' : ''}`;
+    return `<div class="contrib-cell contrib-level-${level}" title="${tooltip}"></div>`;
+  });
+
+  const half = Math.ceil(cells.length / 2);
+  const row1 = cells.slice(0, half).join('');
+  const row2 = cells.slice(half).join('');
+
+  return `
+    <div class="contrib-graph">
+      <div class="contrib-row">${row1}</div>
+      <div class="contrib-row">${row2}</div>
+    </div>
+  `;
+}
+
+function getOpenTaskCount(stats) {
+  if (!stats || !stats.projectBoards) return null;
+  return stats.projectBoards.reduce((sum, b) => sum + b.openItems, 0);
+}
+
+function getProjectBoardUrl(stats) {
+  if (!stats || !stats.projectBoards || stats.projectBoards.length === 0) return null;
+  return stats.projectBoards[0].url;
+}
+
+function renderProjectCards(projects, deployments, repoStats) {
   const grid = document.getElementById('projects-grid');
   grid.innerHTML = projects.map(p => {
     const statusClass = getStatusClass(p.status);
@@ -138,23 +182,39 @@ function renderProjectCards(projects, deployments) {
     const lastCommitLabel = daysSince === 0 ? 'Today' : daysSince === 1 ? '1 day ago' : daysSince + ' days ago';
 
     const deployment = deployments[p.repo] || null;
+    const stats = repoStats ? repoStats[p.repo] : null;
+    const taskCount = getOpenTaskCount(stats);
+    const boardUrl = getProjectBoardUrl(stats);
+
+    const issuesLabel = stats ? stats.openIssues : '?';
+    const tasksLabel = taskCount != null ? taskCount : '?';
+
+    const boardItemCount = (stats ? stats.openIssues : 0) + (taskCount || 0);
+    const boardBadge = boardItemCount > 0 ? `<span class="board-badge">${boardItemCount}</span>` : '';
+    const boardLink = boardUrl
+      ? `<a class="project-board-link" href="${escapeHtml(boardUrl)}" target="_blank" onclick="event.stopPropagation();">Board${boardBadge}</a>`
+      : '';
 
     return `
       <div class="project-row">
-        <a class="project-card" href="https://github.com/${escapeHtml(p.repo)}" target="_blank">
+        <div class="project-card" onclick="window.open('https://github.com/${escapeHtml(p.repo)}', '_blank')" style="cursor:pointer">
           <div class="project-card-header">
             <span class="project-name">${escapeHtml(p.name)}</span>
+            ${boardLink}
             <span class="project-status-badge ${statusClass}">${escapeHtml(p.status_label)}</span>
           </div>
           <div class="project-description">${escapeHtml(p.description)}</div>
-          <div class="project-metrics">
-            <span class="project-metric">${p.metrics.commits_7d} commits</span>
-            <span class="project-metric">${p.metrics.merged_prs_7d} PRs merged</span>
-            <span class="project-metric">${p.metrics.open_prs} open PRs</span>
-            <span class="project-metric">Last: ${lastCommitLabel}</span>
+          <div class="project-activity">
+            ${renderContributionGraph(stats ? stats.dailyCommits : [])}
+            <div class="project-stats-row">
+              <span class="project-stat">${issuesLabel} issues</span>
+              <span class="project-stat">${tasksLabel} tasks</span>
+              <span class="project-stat">${p.metrics.open_prs} open PRs</span>
+              <span class="project-stat">Last: ${lastCommitLabel}</span>
+            </div>
           </div>
           ${risksHtml}
-        </a>
+        </div>
         ${renderDeploymentCard(p.repo, deployment)}
       </div>
     `;

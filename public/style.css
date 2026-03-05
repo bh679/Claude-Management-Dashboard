@@ -516,15 +516,85 @@ body {
   line-height: 1.5;
 }
 
-.project-metrics {
+.project-activity {
+  margin-top: 4px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.contrib-graph {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-bottom: 8px;
+  width: 100%;
+}
+
+.contrib-graph.contrib-empty {
+  height: 18px;
+  background: #1a1a1a;
+  border-radius: 2px;
+}
+
+.contrib-row {
+  display: flex;
+  gap: 1px;
+  width: 100%;
+}
+
+.contrib-cell {
+  flex: 1 1 0;
+  height: 8px;
+  border-radius: 1px;
+  min-width: 0;
+}
+
+.contrib-level-0 { background: #1e1e1e; }
+.contrib-level-1 { background: #1e3d3a; }
+.contrib-level-2 { background: #2a5e58; }
+.contrib-level-3 { background: #3d8a82; }
+.contrib-level-4 { background: #5ba8a0; }
+
+.project-stats-row {
   display: flex;
   gap: 16px;
   flex-wrap: wrap;
 }
 
-.project-metric {
+.project-stat {
   font-size: 13px;
   color: #888;
+}
+
+.project-board-link {
+  font-size: 12px;
+  color: #5ba8a0;
+  text-decoration: none;
+  padding: 2px 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(91, 168, 160, 0.3);
+  margin-left: auto;
+  margin-right: 8px;
+}
+
+.project-board-link:hover {
+  background: rgba(91, 168, 160, 0.15);
+  border-color: #5ba8a0;
+}
+
+.board-badge {
+  display: inline-block;
+  background: #5ba8a0;
+  color: #1a1a1a;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  line-height: 16px;
+  text-align: center;
+  border-radius: 8px;
+  margin-left: 4px;
+  padding: 0 4px;
 }
 
 .project-risks {
