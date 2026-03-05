@@ -38,3 +38,13 @@ window.addEventListener('hashchange', () => {
   if (tab === 'reports') tab = 'projects';
   if (tab) switchTab(tab);
 });
+
+// Populate footer version from API
+fetch('api/version')
+  .then(r => r.json())
+  .then(d => {
+    document.querySelectorAll('.tab-footer-version').forEach(el => {
+      el.textContent = 'v' + d.version;
+    });
+  })
+  .catch(() => {});
