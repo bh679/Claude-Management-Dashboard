@@ -140,8 +140,9 @@ function renderContributionGraph(dailyCommits) {
     return `<div class="contrib-cell contrib-level-${level}" title="${tooltip}"></div>`;
   });
 
-  const row1 = cells.slice(0, 15).join('');
-  const row2 = cells.slice(15).join('');
+  const half = Math.ceil(cells.length / 2);
+  const row1 = cells.slice(0, half).join('');
+  const row2 = cells.slice(half).join('');
 
   return `
     <div class="contrib-graph">
@@ -177,16 +178,20 @@ function renderProjectCards(projects, deployments, repoStats) {
     const stats = repoStats ? repoStats[p.repo] : null;
     const taskCount = getOpenTaskCount(stats);
     const boardUrl = getProjectBoardUrl(stats);
-    const cardUrl = boardUrl || `https://github.com/${escapeHtml(p.repo)}`;
 
     const issuesLabel = stats ? stats.openIssues : '?';
     const tasksLabel = taskCount != null ? taskCount : '?';
 
+    const boardLink = boardUrl
+      ? `<a class="project-board-link" href="${escapeHtml(boardUrl)}" target="_blank" onclick="event.stopPropagation();">Board</a>`
+      : '';
+
     return `
       <div class="project-row">
-        <a class="project-card" href="${escapeHtml(cardUrl)}" target="_blank">
+        <div class="project-card" onclick="window.open('https://github.com/${escapeHtml(p.repo)}', '_blank')" style="cursor:pointer">
           <div class="project-card-header">
             <span class="project-name">${escapeHtml(p.name)}</span>
+            ${boardLink}
             <span class="project-status-badge ${statusClass}">${escapeHtml(p.status_label)}</span>
           </div>
           <div class="project-description">${escapeHtml(p.description)}</div>
@@ -200,7 +205,7 @@ function renderProjectCards(projects, deployments, repoStats) {
             </div>
           </div>
           ${risksHtml}
-        </a>
+        </div>
         ${renderDeploymentCard(p.repo, deployment)}
       </div>
     `;

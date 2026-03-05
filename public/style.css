@@ -518,30 +518,35 @@ body {
 
 .project-activity {
   margin-top: 4px;
+  overflow: hidden;
+  width: 100%;
 }
 
 .contrib-graph {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
   margin-bottom: 8px;
+  width: 100%;
 }
 
 .contrib-graph.contrib-empty {
-  height: 22px;
+  height: 18px;
   background: #1a1a1a;
   border-radius: 2px;
 }
 
 .contrib-row {
   display: flex;
-  gap: 2px;
+  gap: 1px;
+  width: 100%;
 }
 
 .contrib-cell {
-  width: 10px;
-  height: 10px;
-  border-radius: 2px;
+  flex: 1 1 0;
+  height: 8px;
+  border-radius: 1px;
+  min-width: 0;
 }
 
 .contrib-level-0 { background: #1e1e1e; }
@@ -559,6 +564,22 @@ body {
 .project-stat {
   font-size: 13px;
   color: #888;
+}
+
+.project-board-link {
+  font-size: 12px;
+  color: #5ba8a0;
+  text-decoration: none;
+  padding: 2px 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(91, 168, 160, 0.3);
+  margin-left: auto;
+  margin-right: 8px;
+}
+
+.project-board-link:hover {
+  background: rgba(91, 168, 160, 0.15);
+  border-color: #5ba8a0;
 }
 
 .project-risks {

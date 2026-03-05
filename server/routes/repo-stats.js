@@ -16,7 +16,7 @@ function getRepoList() {
 }
 
 function buildGraphQLQuery(repos) {
-  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const since = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString();
 
   const repoFragments = repos.map((repo, i) => {
     const [owner, name] = repo.split('/');
@@ -41,7 +41,7 @@ function buildGraphQLQuery(repos) {
       defaultBranchRef {
         target {
           ... on Commit {
-            history(since: "${since}") {
+            history(since: "${since}", first: 100) {
               totalCount
               nodes { committedDate }
             }
@@ -59,8 +59,8 @@ function buildDailyCommits(commitNodes) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // Initialize 30 days with zero counts
-  for (let i = 29; i >= 0; i--) {
+  // Initialize 365 days with zero counts
+  for (let i = 364; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
     const key = d.toISOString().slice(0, 10);
