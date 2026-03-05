@@ -16,7 +16,7 @@ function getRepoList() {
 }
 
 function buildGraphQLQuery(repos) {
-  const since = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString();
+  const since = new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString();
 
   const repoFragments = repos.map((repo, i) => {
     const [owner, name] = repo.split('/');
@@ -59,8 +59,8 @@ function buildDailyCommits(commitNodes) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // Initialize 365 days with zero counts
-  for (let i = 364; i >= 0; i--) {
+  // Initialize 120 days (~4 months) with zero counts
+  for (let i = 119; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
     const key = d.toISOString().slice(0, 10);

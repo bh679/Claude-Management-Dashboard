@@ -182,8 +182,10 @@ function renderProjectCards(projects, deployments, repoStats) {
     const issuesLabel = stats ? stats.openIssues : '?';
     const tasksLabel = taskCount != null ? taskCount : '?';
 
+    const boardItemCount = (stats ? stats.openIssues : 0) + (taskCount || 0);
+    const boardBadge = boardItemCount > 0 ? `<span class="board-badge">${boardItemCount}</span>` : '';
     const boardLink = boardUrl
-      ? `<a class="project-board-link" href="${escapeHtml(boardUrl)}" target="_blank" onclick="event.stopPropagation();">Board</a>`
+      ? `<a class="project-board-link" href="${escapeHtml(boardUrl)}" target="_blank" onclick="event.stopPropagation();">Board${boardBadge}</a>`
       : '';
 
     return `
