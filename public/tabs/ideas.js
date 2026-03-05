@@ -1,3 +1,9 @@
+const IDEA_SECTIONS = [
+  { key: 'opportunities', label: 'Opportunities', icon: '🔭' },
+  { key: 'projects', label: 'New Projects', icon: '🚀' },
+  { key: 'features', label: 'Features', icon: '🔧' }
+];
+
 async function loadIdeasData() {
   const loading = document.getElementById('ideas-loading');
   const error = document.getElementById('ideas-error');
@@ -11,24 +17,23 @@ async function loadIdeasData() {
 
   try {
     const res = await fetch('/api/cmd/ideas');
-    const items = await res.json();
+    const data = await res.json();
 
     loading.classList.add('hidden');
 
-    if (!items.length) {
+    const totalItems = IDEA_SECTIONS.reduce(
+      (sum, s) => sum + (data[s.key] || []).length, 0
+    );
+
+    if (totalItems === 0) {
       empty.classList.remove('hidden');
       return;
     }
 
-    list.innerHTML = items.map(item => `
-      <div class="idea-card">
-        <div class="idea-card-header">
-          <span class="idea-title">${escapeHtml(item.title)}</span>
-          ${item.status ? `<span class="idea-status">${escapeHtml(item.status)}</span>` : ''}
-        </div>
-        ${item.body ? `<div class="idea-body">${escapeHtml(truncate(item.body, 200))}</div>` : ''}
-      </div>
-    `).join('');
+    list.innerHTML = IDEA_SECTIONS
+      .filter(section => (data[section.key] || []).length > 0)
+      .map(section => renderSection(section, data[section.key]))
+      .join('');
 
     list.classList.remove('hidden');
   } catch (err) {
@@ -36,6 +41,44 @@ async function loadIdeasData() {
     error.textContent = 'Failed to load ideas: ' + err.message;
     error.classList.remove('hidden');
   }
+}
+
+function renderSection(section, items) {
+  return `
+    <div class="ideas-section">
+      <div class="ideas-section-header">
+        <span class="ideas-section-title">${section.icon} ${section.label}</span>
+        <span class="ideas-section-count">${items.length}</span>
+      </div>
+      <div class="ideas-section-grid">
+        ${items.map(item => renderCard(item, section.key)).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderCard(item, type) {
+  const tags = (item.tags || []).map(t => `<span class="idea-tag">${escapeHtml(t)}</span>`).join('');
+  const effort = item.effort ? `<span class="idea-effort idea-effort-${escapeHtml(item.effort).toLowerCase()}">${escapeHtml(item.effort)}</span>` : '';
+  const status = item.status ? `<span class="idea-status idea-type-${type}">${escapeHtml(item.status)}</span>` : '';
+  const description = item.description || '';
+  const parentProject = item.parent_project ? `<span class="idea-parent">${escapeHtml(item.parent_project)}</span>` : '';
+
+  return `
+    <div class="idea-card idea-card-${type}">
+      <div class="idea-card-header">
+        <span class="idea-title">${escapeHtml(item.title)}</span>
+        <div class="idea-badges">
+          ${effort}${status}
+        </div>
+      </div>
+      ${description ? `<div class="idea-body">${escapeHtml(truncate(description, 200))}</div>` : ''}
+      <div class="idea-card-footer">
+        ${parentProject}
+        ${tags ? `<div class="idea-tags">${tags}</div>` : ''}
+      </div>
+    </div>
+  `;
 }
 
 function escapeHtml(str) {
