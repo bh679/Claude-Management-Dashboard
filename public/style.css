@@ -516,13 +516,47 @@ body {
   line-height: 1.5;
 }
 
-.project-metrics {
+.project-activity {
+  margin-top: 4px;
+}
+
+.contrib-graph {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 8px;
+}
+
+.contrib-graph.contrib-empty {
+  height: 22px;
+  background: #1a1a1a;
+  border-radius: 2px;
+}
+
+.contrib-row {
+  display: flex;
+  gap: 2px;
+}
+
+.contrib-cell {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.contrib-level-0 { background: #1e1e1e; }
+.contrib-level-1 { background: #1e3d3a; }
+.contrib-level-2 { background: #2a5e58; }
+.contrib-level-3 { background: #3d8a82; }
+.contrib-level-4 { background: #5ba8a0; }
+
+.project-stats-row {
   display: flex;
   gap: 16px;
   flex-wrap: wrap;
 }
 
-.project-metric {
+.project-stat {
   font-size: 13px;
   color: #888;
 }
