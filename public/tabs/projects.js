@@ -93,9 +93,13 @@ function renderDeploymentCard(repo, deployment) {
   const statusClass = getDeployStatusClass(deployment.status);
   const statusLabel = getDeployStatusLabel(deployment.status);
 
-  const liveLink = deployment.url
-    ? `<a class="deploy-link" href="${escapeHtml(deployment.url)}" target="_blank" onclick="event.stopPropagation();">${escapeHtml(deployment.url.replace(/^https?:\/\//, ''))}</a>`
-    : '';
+  const allUrls = [
+    ...(deployment.url ? [deployment.url] : []),
+    ...(deployment.additional_urls || [])
+  ];
+  const liveLink = allUrls.map(u =>
+    `<a class="deploy-link" href="${escapeHtml(u)}" target="_blank" onclick="event.stopPropagation();">${escapeHtml(u.replace(/^https?:\/\//, ''))}</a>`
+  ).join('');
 
   const serverInfo = deployment.server
     ? `<div class="deploy-server">
