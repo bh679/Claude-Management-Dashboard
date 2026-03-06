@@ -22,12 +22,11 @@
     "region": null
   },
   "bh679/weekly-blog": {
-    "url": "https://brennan.games/blog/",
-    "server": "AWS Lightsail",
-    "server_url": "https://lightsail.aws.amazon.com/ls/webapp/ap-southeast-2/instances/Brennan.Games2/connect",
-    "instance_name": "Brennan.Games2",
-    "region": "ap-southeast-2a",
-    "static_ip": "3.24.141.2"
+    "url": "https://github.com/bh679/weekly-blog/wiki",
+    "type": "operator",
+    "server": null,
+    "server_url": null,
+    "region": null
   },
   "bh679/Claude-Max-Usage-Analytics": {
     "url": "https://brennan.games/ClaudeMD/",

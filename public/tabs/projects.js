@@ -71,6 +71,7 @@ function getDeployStatusClass(status) {
   if (status === 'live') return 'deploy-live';
   if (status === 'error') return 'deploy-error';
   if (status === 'offline') return 'deploy-offline';
+  if (status === 'operator') return 'deploy-operator';
   return 'deploy-none';
 }
 
@@ -78,6 +79,7 @@ function getDeployStatusLabel(status) {
   if (status === 'live') return 'Live';
   if (status === 'error') return 'Error';
   if (status === 'offline') return 'Offline';
+  if (status === 'operator') return 'Operator';
   return 'Not Deployed';
 }
 
