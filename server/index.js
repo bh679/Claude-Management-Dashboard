@@ -7,6 +7,7 @@ const projectsRoutes = require('./routes/projects');
 const ideasRoutes = require('./routes/ideas');
 const blogRoutes = require('./routes/blog');
 const deploymentsRoutes = require('./routes/deployments');
+const repoStatsRoutes = require('./routes/repo-stats');
 const pendingReposRoutes = require('./routes/pending-repos');
 
 const pkg = require('../package.json');
@@ -31,6 +32,7 @@ app.use('/api/cmd/projects', projectsRoutes);
 app.use('/api/cmd/ideas', ideasRoutes);
 app.use('/api/cmd/blog', blogRoutes);
 app.use('/api/cmd/deployments', deploymentsRoutes);
+app.use('/api/cmd/repo-stats', repoStatsRoutes);
 app.use('/api/cmd/pending-repos', pendingReposRoutes);
 
 app.listen(PORT, () => {

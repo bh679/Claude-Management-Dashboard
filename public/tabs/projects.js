@@ -8,15 +8,23 @@ async function loadProjectsData() {
   content.classList.add('hidden');
 
   try {
-    const [projectsRes, deploymentsRes, pendingRes] = await Promise.all([
+    const [projectsRes, deploymentsRes, repoStatsRes, pendingRes] = await Promise.all([
       fetch('/api/cmd/projects'),
       fetch('/api/cmd/deployments').catch(() => null),
+      fetch('/api/cmd/repo-stats').catch(() => null),
       fetch('/api/cmd/pending-repos').catch(() => null)
     ]);
 
     const data = await projectsRes.json();
-    const deployments = deploymentsRes ? await deploymentsRes.json() : {};
-    const pendingRepos = pendingRes ? await pendingRes.json() : [];
+    const deployments = (deploymentsRes && deploymentsRes.ok)
+      ? await deploymentsRes.json()
+      : {};
+    const repoStats = (repoStatsRes && repoStatsRes.ok)
+      ? await repoStatsRes.json()
+      : {};
+    const pendingRepos = (pendingRes && pendingRes.ok)
+      ? await pendingRes.json()
+      : [];
 
     loading.classList.add('hidden');
 
@@ -34,13 +42,14 @@ async function loadProjectsData() {
     }
 
     renderProjectsSummary(data.summary);
-    renderProjectCards(data.projects, deployments);
+    renderProjectCards(data.projects, deployments, repoStats);
     renderPendingRepos(Array.isArray(pendingRepos) ? pendingRepos : [], data.projects || []);
     renderReportDate(data.report_date);
     content.classList.remove('hidden');
 
-    // Load report summary card
+    // Load report summary card and schedule
     loadReportSummary();
+    loadReportSchedule();
   } catch (err) {
     loading.classList.add('hidden');
     error.textContent = 'Failed to load projects: ' + err.message;
@@ -70,10 +79,18 @@ function getStatusClass(status) {
   return '';
 }
 
+function getStatusDotColor(status) {
+  if (status === 'moving_well') return '#4caf50';
+  if (status === 'at_risk') return '#e0b050';
+  if (status === 'needs_decision') return '#e07070';
+  return '#666';
+}
+
 function getDeployStatusClass(status) {
   if (status === 'live') return 'deploy-live';
   if (status === 'error') return 'deploy-error';
   if (status === 'offline') return 'deploy-offline';
+  if (status === 'operator') return 'deploy-operator';
   return 'deploy-none';
 }
 
@@ -81,7 +98,19 @@ function getDeployStatusLabel(status) {
   if (status === 'live') return 'Live';
   if (status === 'error') return 'Error';
   if (status === 'offline') return 'Offline';
+  if (status === 'operator') return 'Operator';
   return 'Not Deployed';
+}
+
+function renderActivityGraph(activity) {
+  if (!activity || !activity.length) return '';
+  const max = Math.max(...activity, 1);
+  const bars = activity.map(v => {
+    const height = Math.round((v / max) * 20);
+    const opacity = v === 0 ? 0.15 : 0.4 + (v / max) * 0.6;
+    return `<div class="activity-bar" style="height:${Math.max(height, 2)}px;opacity:${opacity}"></div>`;
+  }).join('');
+  return `<div class="repo-activity-graph">${bars}</div>`;
 }
 
 function renderDeploymentCard(repo, deployment) {
@@ -96,9 +125,13 @@ function renderDeploymentCard(repo, deployment) {
   const statusClass = getDeployStatusClass(deployment.status);
   const statusLabel = getDeployStatusLabel(deployment.status);
 
-  const liveLink = deployment.url
-    ? `<a class="deploy-link" href="${escapeHtml(deployment.url)}" target="_blank" onclick="event.stopPropagation();">${escapeHtml(deployment.url.replace(/^https?:\/\//, ''))}</a>`
-    : '';
+  const allUrls = [
+    ...(deployment.url ? [deployment.url] : []),
+    ...(deployment.additional_urls || [])
+  ];
+  const liveLink = allUrls.map(u =>
+    `<a class="deploy-link" href="${escapeHtml(u)}" target="_blank" onclick="event.stopPropagation();">${escapeHtml(u.replace(/^https?:\/\//, ''))}</a>`
+  ).join('');
 
   const serverInfo = deployment.server
     ? `<div class="deploy-server">
@@ -121,7 +154,102 @@ function renderDeploymentCard(repo, deployment) {
   `;
 }
 
-function renderProjectCards(projects, deployments) {
+function getContribLevel(count) {
+  if (count === 0) return 0;
+  if (count === 1) return 1;
+  if (count <= 4) return 2;
+  if (count <= 9) return 3;
+  return 4;
+}
+
+function renderContributionGraph(dailyCommits) {
+  if (!dailyCommits || dailyCommits.length === 0) {
+    return '<div class="contrib-graph contrib-empty"></div>';
+  }
+  const cells = dailyCommits.map(d => {
+    const level = getContribLevel(d.count);
+    const dateLabel = new Date(d.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const tooltip = d.count === 0 ? `${dateLabel}: No activity` : `${dateLabel}: ${d.count} commit${d.count !== 1 ? 's' : ''}`;
+    return `<div class="contrib-cell contrib-level-${level}" title="${tooltip}"></div>`;
+  });
+  const half = Math.ceil(cells.length / 2);
+  const row1 = cells.slice(0, half).join('');
+  const row2 = cells.slice(half).join('');
+  return `
+    <div class="contrib-graph">
+      <div class="contrib-row">${row1}</div>
+      <div class="contrib-row">${row2}</div>
+    </div>
+  `;
+}
+
+function combineDailyCommits(repoList, repoStats) {
+  const dateMap = {};
+  for (const repo of repoList) {
+    const stats = repoStats[repo];
+    if (!stats || !stats.dailyCommits) continue;
+    for (const d of stats.dailyCommits) {
+      dateMap[d.date] = (dateMap[d.date] || 0) + d.count;
+    }
+  }
+  return Object.entries(dateMap)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, count]) => ({ date, count }));
+}
+
+function renderTileSquares(activity) {
+  if (!activity || !activity.length) return '';
+  const max = Math.max(...activity, 1);
+  const squares = activity.map(v => {
+    const opacity = v === 0 ? 0.1 : 0.3 + (v / max) * 0.7;
+    return `<span class="activity-square" style="opacity:${opacity}"></span>`;
+  }).join('');
+  return `<div class="repo-activity-squares">${squares}</div>`;
+}
+
+function renderRepoTile(project, role, parentBoardUrl) {
+  const dotColor = getStatusDotColor(project.status);
+  const borderClass = role === 'main' ? 'repo-main' : 'repo-child';
+  const repoName = project.name || project.repo.split('/')[1];
+  const m = project.metrics || {};
+
+  const hasOwnBoard = project.board_url && project.board_url !== parentBoardUrl;
+  const boardBtn = hasOwnBoard
+    ? `<a class="repo-board-btn" href="${escapeHtml(project.board_url)}" target="_blank" onclick="event.stopPropagation();" title="Project Board" style="color:${dotColor}">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M1.75 0h12.5C15.216 0 16 .784 16 1.75v12.5A1.75 1.75 0 0114.25 16H1.75A1.75 1.75 0 010 14.25V1.75C0 .784.784 0 1.75 0zM1.5 1.75v12.5c0 .138.112.25.25.25h12.5a.25.25 0 00.25-.25V1.75a.25.25 0 00-.25-.25H1.75a.25.25 0 00-.25.25zM11.75 3a.75.75 0 01.75.75v7.5a.75.75 0 01-1.5 0v-7.5a.75.75 0 01.75-.75zm-8.25.75a.75.75 0 011.5 0v5.5a.75.75 0 01-1.5 0zM8 3a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 018 3z"/></svg>
+      </a>`
+    : '';
+
+  return `
+    <div class="project-repo-tile ${borderClass}">
+      <div class="repo-tile-header">
+        <a class="repo-tile-name" href="https://github.com/${escapeHtml(project.repo)}" target="_blank">
+          <span class="repo-status-dot" style="background:${dotColor}"></span>
+          ${escapeHtml(repoName)}
+        </a>
+        ${boardBtn}
+      </div>
+      <div class="repo-tile-metrics">
+        <span>${m.commits_7d || 0} c</span>
+        <span>${m.open_prs || 0} pr</span>
+        <span>${m.merged_prs_7d || 0} m</span>
+        ${renderTileSquares(project.activity)}
+      </div>
+    </div>
+  `;
+}
+
+function getOpenTaskCount(stats) {
+  if (!stats || !stats.projectBoards) return null;
+  return stats.projectBoards.reduce((sum, b) => sum + b.openItems, 0);
+}
+
+function getProjectBoardUrl(stats) {
+  if (!stats || !stats.projectBoards || stats.projectBoards.length === 0) return null;
+  return stats.projectBoards[0].url;
+}
+
+function renderProjectCards(projects, deployments, repoStats) {
   const grid = document.getElementById('projects-grid');
   grid.innerHTML = projects.map(p => {
     const statusClass = getStatusClass(p.status);
@@ -130,27 +258,75 @@ function renderProjectCards(projects, deployments) {
           `<span class="project-risk">${escapeHtml(r.summary)}</span>`
         ).join('')}</div>`
       : '';
-    const daysSince = p.metrics.days_since_last_commit;
-    const lastCommitLabel = daysSince === 0 ? 'Today' : daysSince === 1 ? '1 day ago' : daysSince + ' days ago';
+
+    const cm = p.combined_metrics || p.metrics;
+    const daysSince = cm.days_since_last_commit;
+    const lastCommitLabel = daysSince === 0 ? 'Today'
+      : daysSince === 1 ? '1d ago'
+      : daysSince != null ? daysSince + 'd ago'
+      : '?';
 
     const deployment = deployments[p.repo] || null;
+    const stats = repoStats ? repoStats[p.repo] : null;
+    const taskCount = getOpenTaskCount(stats);
+    const boardUrl = getProjectBoardUrl(stats);
+
+    const issuesLabel = stats ? stats.openIssues : '?';
+    const tasksLabel = taskCount != null ? taskCount : '?';
+
+    const boardItemCount = (stats ? stats.openIssues : 0) + (taskCount || 0);
+    const boardBadge = boardItemCount > 0 ? `<span class="board-badge">${boardItemCount}</span>` : '';
+    const boardLink = boardUrl
+      ? `<a class="project-board-link" href="${escapeHtml(boardUrl)}" target="_blank" onclick="event.stopPropagation();">Board${boardBadge}</a>`
+      : '';
+
+    // Render repo tiles: main + children
+    const children = p.children || [];
+    const hasRepoTiles = children.length > 0;
+    const parentBoardUrl = p.board_url || null;
+
+    let repoTilesHtml = '';
+    if (hasRepoTiles) {
+      const mainTile = renderRepoTile(p, 'main', parentBoardUrl);
+      const childTiles = children.map(c => renderRepoTile(c, 'child', parentBoardUrl)).join('');
+      repoTilesHtml = `<div class="project-repos">${mainTile}${childTiles}</div>`;
+    }
+
+    // Card-level board button
+    const cardBoardBtn = p.board_url
+      ? `<a class="card-board-btn" href="${escapeHtml(p.board_url)}" target="_blank" title="Project Board">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M1.75 0h12.5C15.216 0 16 .784 16 1.75v12.5A1.75 1.75 0 0114.25 16H1.75A1.75 1.75 0 010 14.25V1.75C0 .784.784 0 1.75 0zM1.5 1.75v12.5c0 .138.112.25.25.25h12.5a.25.25 0 00.25-.25V1.75a.25.25 0 00-.25-.25H1.75a.25.25 0 00-.25.25zM11.75 3a.75.75 0 01.75.75v7.5a.75.75 0 01-1.5 0v-7.5a.75.75 0 01.75-.75zm-8.25.75a.75.75 0 011.5 0v5.5a.75.75 0 01-1.5 0zM8 3a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 018 3z"/></svg>
+        </a>`
+      : '';
+
+    // Combined contribution graph from repo-stats
+    const allRepos = [p.repo, ...children.map(c => c.repo)];
+    const dailyCommits = combineDailyCommits(allRepos, repoStats);
+    const contribGraph = renderContributionGraph(dailyCommits);
 
     return `
       <div class="project-row">
-        <a class="project-card" href="https://github.com/${escapeHtml(p.repo)}" target="_blank">
+        <div class="project-card">
           <div class="project-card-header">
-            <span class="project-name">${escapeHtml(p.name)}</span>
-            <span class="project-status-badge ${statusClass}">${escapeHtml(p.status_label)}</span>
+            <a class="project-name-link" href="https://github.com/${escapeHtml(p.repo)}" target="_blank">
+              <span class="project-name">${escapeHtml(p.name)}</span>
+            </a>
+            <div class="project-header-right">
+              ${cardBoardBtn}
+              <span class="project-status-badge ${statusClass}">${escapeHtml(p.status_label)}</span>
+            </div>
           </div>
           <div class="project-description">${escapeHtml(p.description)}</div>
           <div class="project-metrics">
-            <span class="project-metric">${p.metrics.commits_7d} commits</span>
-            <span class="project-metric">${p.metrics.merged_prs_7d} PRs merged</span>
-            <span class="project-metric">${p.metrics.open_prs} open PRs</span>
+            <span class="project-metric">${cm.commits_7d} c</span>
+            <span class="project-metric">${cm.open_prs} pr</span>
+            <span class="project-metric">${cm.merged_prs_7d} m</span>
             <span class="project-metric">Last: ${lastCommitLabel}</span>
           </div>
+          ${contribGraph}
           ${risksHtml}
-        </a>
+          ${repoTilesHtml}
+        </div>
         ${renderDeploymentCard(p.repo, deployment)}
       </div>
     `;
@@ -548,4 +724,54 @@ function formatRelativeDate(isoDate) {
   const diffMonths = Math.floor(diffDays / 30);
   if (diffMonths === 1) return '1 month ago';
   return diffMonths + ' months ago';
+}
+
+function formatReportDate(date) {
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+  if (date.toDateString() === today.toDateString()) return 'today';
+  if (date.toDateString() === tomorrow.toDateString()) return 'tomorrow';
+  return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+async function loadReportSchedule() {
+  const el = document.getElementById('reports-schedule');
+  if (!el) return;
+
+  try {
+    const res = await fetch('/api/cmd/reports/list');
+    const reports = await res.json();
+
+    if (!reports || reports.length === 0) return;
+
+    reports.sort((a, b) => b.date.localeCompare(a.date));
+    const lastDate = new Date(reports[0].date);
+
+    let frequencyLabel = 'weekly';
+    let frequencyDays = 7;
+
+    if (reports.length >= 2) {
+      const gaps = [];
+      for (let i = 0; i < reports.length - 1; i++) {
+        const d1 = new Date(reports[i].date);
+        const d2 = new Date(reports[i + 1].date);
+        gaps.push((d1 - d2) / (1000 * 60 * 60 * 24));
+      }
+      const avgGap = gaps.reduce((s, g) => s + g, 0) / gaps.length;
+      frequencyDays = Math.round(avgGap);
+      if (frequencyDays <= 1) frequencyLabel = 'daily';
+      else if (frequencyDays <= 7) frequencyLabel = 'weekly';
+      else if (frequencyDays <= 14) frequencyLabel = 'bi-weekly';
+      else frequencyLabel = 'monthly';
+    }
+
+    const nextRun = new Date(lastDate);
+    nextRun.setDate(nextRun.getDate() + frequencyDays);
+
+    el.textContent = `Runs ${frequencyLabel} · Next: ${formatReportDate(nextRun)}`;
+    el.classList.remove('hidden');
+  } catch (err) {
+    // schedule subheading is optional — silently skip on error
+  }
 }

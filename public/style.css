@@ -451,6 +451,7 @@ body {
 .project-row {
   display: flex;
   gap: 12px;
+  align-items: flex-start;
 }
 
 .project-card {
@@ -461,13 +462,16 @@ body {
   border: 1px solid #333;
   border-radius: 8px;
   padding: 16px 20px;
-  text-decoration: none;
   color: inherit;
-  transition: border-color 0.2s;
 }
 
-.project-card:hover {
-  border-color: #5ba8a0;
+.project-name-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.project-name-link:hover .project-name {
+  color: #5ba8a0;
 }
 
 .project-card-header {
@@ -516,15 +520,85 @@ body {
   line-height: 1.5;
 }
 
-.project-metrics {
+.project-activity {
+  margin-top: 4px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.contrib-graph {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-bottom: 8px;
+  width: 100%;
+}
+
+.contrib-graph.contrib-empty {
+  height: 18px;
+  background: #1a1a1a;
+  border-radius: 2px;
+}
+
+.contrib-row {
+  display: flex;
+  gap: 1px;
+  width: 100%;
+}
+
+.contrib-cell {
+  flex: 1 1 0;
+  height: 8px;
+  border-radius: 1px;
+  min-width: 0;
+}
+
+.contrib-level-0 { background: #1e1e1e; }
+.contrib-level-1 { background: #1e3d3a; }
+.contrib-level-2 { background: #2a5e58; }
+.contrib-level-3 { background: #3d8a82; }
+.contrib-level-4 { background: #5ba8a0; }
+
+.project-stats-row {
   display: flex;
   gap: 16px;
   flex-wrap: wrap;
 }
 
-.project-metric {
+.project-stat {
   font-size: 13px;
   color: #888;
+}
+
+.project-board-link {
+  font-size: 12px;
+  color: #5ba8a0;
+  text-decoration: none;
+  padding: 2px 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(91, 168, 160, 0.3);
+  margin-left: auto;
+  margin-right: 8px;
+}
+
+.project-board-link:hover {
+  background: rgba(91, 168, 160, 0.15);
+  border-color: #5ba8a0;
+}
+
+.board-badge {
+  display: inline-block;
+  background: #5ba8a0;
+  color: #1a1a1a;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  line-height: 16px;
+  text-align: center;
+  border-radius: 8px;
+  margin-left: 4px;
+  padding: 0 4px;
 }
 
 .project-risks {
@@ -537,6 +611,110 @@ body {
   color: #e0b050;
   line-height: 1.5;
 }
+
+/* Repo Tiles (within project cards) */
+.project-repos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.project-repo-tile {
+  width: calc(33.33% - 6px);
+  min-width: 140px;
+  background: rgba(0, 0, 0, 0.15);
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 8px 10px;
+  text-decoration: none;
+  color: inherit;
+  border-left: 3px solid #444;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.project-repo-tile:hover {
+  background: rgba(0, 0, 0, 0.25);
+  border-color: #555;
+}
+
+.project-repo-tile.repo-main {
+  border-left-color: #5ba8a0;
+}
+
+.project-repo-tile.repo-child {
+  border-left-color: #555;
+}
+
+.repo-tile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.repo-tile-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #ccc;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.repo-tile-name:hover {
+  color: #5ba8a0;
+}
+
+.repo-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.repo-board-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.repo-board-btn:hover {
+  opacity: 1;
+}
+
+.repo-tile-metrics {
+  display: flex;
+  gap: 8px;
+  font-size: 11px;
+  color: #777;
+}
+
+.repo-activity-squares {
+  display: flex;
+  gap: 2px;
+  margin-left: auto;
+}
+
+.activity-square {
+  width: 8px;
+  height: 8px;
+  background: #5ba8a0;
+  border-radius: 2px;
+}
+
+@media (max-width: 640px) {
+  .project-repo-tile {
+    width: calc(50% - 4px);
+    min-width: 120px;
+  }
 
 /* Pending Repos */
 .pending-repos-header {
@@ -830,6 +1008,11 @@ body {
   opacity: 0.6;
 }
 
+.deployment-card.deploy-operator {
+  border-left-color: #64b5f6;
+  background: rgba(100, 181, 246, 0.06);
+}
+
 .deploy-status-badge {
   font-size: 11px;
   font-weight: 600;
@@ -855,6 +1038,11 @@ body {
 .deploy-status-badge.deploy-offline {
   background: rgba(136, 136, 136, 0.15);
   color: #888;
+}
+
+.deploy-status-badge.deploy-operator {
+  background: rgba(100, 181, 246, 0.15);
+  color: #64b5f6;
 }
 
 .deploy-response-time {
@@ -909,6 +1097,20 @@ body {
 /* Reports Section (within Projects tab) */
 .reports-section {
   border-bottom: none;
+}
+
+.reports-section-header {
+  margin-bottom: 16px;
+}
+
+.reports-section-header h2 {
+  margin-bottom: 4px;
+}
+
+.reports-schedule {
+  font-size: 13px;
+  color: #888;
+  margin: 0;
 }
 
 .report-summary-card {
@@ -1010,7 +1212,35 @@ body {
 .ideas-grid {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 24px;
+}
+
+.ideas-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #333;
+}
+
+.ideas-section-title {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.ideas-section-count {
+  font-size: 13px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: #333;
+  color: #aaa;
+}
+
+.ideas-section-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .idea-card {
@@ -1019,6 +1249,10 @@ body {
   border-radius: 8px;
   padding: 16px 20px;
 }
+
+.idea-card-opportunities { border-left: 3px solid #e6a817; }
+.idea-card-projects { border-left: 3px solid #3b82f6; }
+.idea-card-features { border-left: 3px solid #10b981; }
 
 .idea-card-header {
   display: flex;
@@ -1032,6 +1266,12 @@ body {
   font-weight: 600;
 }
 
+.idea-badges {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
 .idea-status {
   font-size: 12px;
   padding: 2px 10px;
@@ -1042,10 +1282,53 @@ body {
   letter-spacing: 0.5px;
 }
 
+.idea-type-opportunities { background: rgba(230, 168, 23, 0.15); color: #e6a817; }
+.idea-type-projects { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+.idea-type-features { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+
+.idea-effort {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: #333;
+  color: #aaa;
+  font-weight: 600;
+}
+
 .idea-body {
   font-size: 14px;
   color: #aaa;
   line-height: 1.6;
+}
+
+.idea-card-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.idea-parent {
+  font-size: 12px;
+  padding: 1px 8px;
+  border-radius: 8px;
+  background: rgba(139, 92, 246, 0.15);
+  color: #8b5cf6;
+}
+
+.idea-tags {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.idea-tag {
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 8px;
+  background: #333;
+  color: #888;
 }
 
 /* Blog Posts */
