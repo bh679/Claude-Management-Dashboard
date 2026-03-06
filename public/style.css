@@ -990,6 +990,11 @@ body {
   opacity: 0.6;
 }
 
+.deployment-card.deploy-operator {
+  border-left-color: #64b5f6;
+  background: rgba(100, 181, 246, 0.06);
+}
+
 .deploy-status-badge {
   font-size: 11px;
   font-weight: 600;
@@ -1015,6 +1020,11 @@ body {
 .deploy-status-badge.deploy-offline {
   background: rgba(136, 136, 136, 0.15);
   color: #888;
+}
+
+.deploy-status-badge.deploy-operator {
+  background: rgba(100, 181, 246, 0.15);
+  color: #64b5f6;
 }
 
 .deploy-response-time {
