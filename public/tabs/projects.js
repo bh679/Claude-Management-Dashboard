@@ -199,8 +199,9 @@ function combineDailyCommits(repoList, repoStats) {
 
 function renderTileSquares(dailyCommits) {
   if (!dailyCommits || !dailyCommits.length) return '';
-  const max = Math.max(...dailyCommits.map(d => d.count), 1);
-  const squares = dailyCommits.map(d => {
+  const recent = dailyCommits.slice(-14);
+  const max = Math.max(...recent.map(d => d.count), 1);
+  const squares = recent.map(d => {
     const opacity = d.count === 0 ? 0.1 : 0.3 + (d.count / max) * 0.7;
     const dateLabel = new Date(d.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     const tooltip = d.count === 0 ? `${dateLabel}: No activity` : `${dateLabel}: ${d.count} commit${d.count !== 1 ? 's' : ''}`;
