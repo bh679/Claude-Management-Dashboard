@@ -1,2 +1,2 @@
 RewriteEngine On
-RewriteRule ^api/(.*)$ http://localhost:8080/api/$1 [P,L]
+RewriteRule ^api/cmd/scrape/(.*)$ http://localhost:8080/api/scrape/$1 [P,L]
