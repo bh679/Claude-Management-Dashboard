@@ -59,7 +59,12 @@ router.get('/', async (req, res) => {
     const repos = Object.keys(config);
 
     const healthResults = await Promise.all(
-      repos.map(repo => checkHealth(config[repo].url))
+      repos.map(repo => {
+        if (config[repo].type === 'operator') {
+          return { status: 'operator', responseTime: null };
+        }
+        return checkHealth(config[repo].url);
+      })
     );
 
     const result = {};
