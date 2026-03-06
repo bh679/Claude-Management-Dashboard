@@ -14,7 +14,9 @@ async function loadProjectsData() {
     ]);
 
     const data = await projectsRes.json();
-    const deployments = deploymentsRes ? await deploymentsRes.json() : {};
+    const deployments = (deploymentsRes && deploymentsRes.ok)
+      ? await deploymentsRes.json()
+      : {};
 
     loading.classList.add('hidden');
 
