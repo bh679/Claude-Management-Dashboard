@@ -559,6 +559,31 @@ body {
 .contrib-level-3 { background: #3d8a82; }
 .contrib-level-4 { background: #5ba8a0; }
 
+/* Tooltip for contrib cells and activity squares */
+.contrib-cell[data-tooltip],
+.activity-square[data-tooltip] {
+  position: relative;
+  cursor: default;
+}
+
+.contrib-cell[data-tooltip]:hover::after,
+.activity-square[data-tooltip]:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #222;
+  color: #e8e8e8;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  z-index: 10;
+  pointer-events: none;
+  border: 1px solid #444;
+}
+
 .project-stats-row {
   display: flex;
   gap: 16px;
