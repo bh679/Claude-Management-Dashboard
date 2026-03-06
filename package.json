@@ -1,6 +1,6 @@
 {
   "name": "claude-management-dashboard",
-  "version": "1.04.0015",
+  "version": "1.04.0017",
 
   "requiredAnalyticsVersion": "1.01",
   "requiredDashboardSchema": "1.0",
