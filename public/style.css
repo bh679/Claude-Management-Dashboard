@@ -866,6 +866,24 @@ body {
   border-color: #e07070;
 }
 
+.pending-btn-subproject {
+  color: #7a8fc7;
+}
+
+.pending-btn-subproject:hover:not(:disabled) {
+  background: rgba(122, 143, 199, 0.15);
+  border-color: #7a8fc7;
+}
+
+.pending-btn-subproject-confirm {
+  color: #7a8fc7;
+}
+
+.pending-btn-subproject-confirm:hover:not(:disabled) {
+  background: rgba(122, 143, 199, 0.15);
+  border-color: #7a8fc7;
+}
+
 .pending-btn-reject-confirm {
   color: #e07070;
 }
