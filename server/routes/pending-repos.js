@@ -147,4 +147,60 @@ router.post('/reject', (req, res) => {
   }
 });
 
+// POST /add-sub-project — Approve pending repo as sub-project of an existing tracked project
+router.post('/add-sub-project', (req, res) => {
+  const { repo, description, parent } = req.body;
+
+  if (!validateRepo(repo)) {
+    return res.status(400).json({ error: 'invalid_repo', message: 'Invalid repo format' });
+  }
+  if (!parent || !validateRepo(parent)) {
+    return res.status(400).json({ error: 'invalid_parent', message: 'A valid parent repo is required' });
+  }
+  if (!description || typeof description !== 'string') {
+    return res.status(400).json({ error: 'missing_description', message: 'Description is required' });
+  }
+
+  try {
+    const pending = fetchCooFile('pending-repos.json');
+    const consumers = fetchCooFile('consumers.json');
+
+    if (!pending.content || !Array.isArray(pending.content)) {
+      return res.status(400).json({ error: 'no_pending', message: 'No pending repos found' });
+    }
+
+    const inPending = pending.content.some(p => p.repo === repo);
+    if (!inPending) {
+      return res.status(400).json({ error: 'not_pending', message: `${repo} is not in pending repos` });
+    }
+
+    const consumersArray = Array.isArray(consumers.content) ? consumers.content : [];
+
+    const alreadyTracked = consumersArray.some(c => c.repo === repo);
+    if (alreadyTracked) {
+      return res.status(400).json({ error: 'already_tracked', message: `${repo} is already tracked` });
+    }
+
+    const parentExists = consumersArray.some(c => c.repo === parent);
+    if (!parentExists) {
+      return res.status(400).json({ error: 'parent_not_found', message: `Parent project ${parent} is not a tracked project` });
+    }
+
+    // Build new arrays (immutable)
+    const newConsumers = [...consumersArray, { repo, description, parent }];
+    const newPending = pending.content.filter(p => p.repo !== repo);
+
+    putCooFile('consumers.json', newConsumers, consumers.sha, `chore: add ${repo} as sub-project of ${parent}`);
+    putCooFile('pending-repos.json', newPending, pending.sha, `chore: remove ${repo} from pending`);
+
+    res.json({ success: true, repo, parent });
+  } catch (err) {
+    console.error('Failed to add sub-project:', err.message);
+    if (err.message && err.message.includes('409')) {
+      return res.status(409).json({ error: 'conflict', message: 'File was modified. Please refresh and try again.' });
+    }
+    res.status(500).json({ error: 'sub_project_failed', message: err.message });
+  }
+});
+
 module.exports = router;
