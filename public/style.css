@@ -740,6 +740,7 @@ body {
     width: calc(50% - 4px);
     min-width: 120px;
   }
+}
 
 /* Pending Repos */
 .pending-repos-header {
