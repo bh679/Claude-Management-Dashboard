@@ -170,7 +170,7 @@ function renderContributionGraph(dailyCommits) {
     const level = getContribLevel(d.count);
     const dateLabel = new Date(d.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     const tooltip = d.count === 0 ? `${dateLabel}: No activity` : `${dateLabel}: ${d.count} commit${d.count !== 1 ? 's' : ''}`;
-    return `<div class="contrib-cell contrib-level-${level}" title="${tooltip}"></div>`;
+    return `<div class="contrib-cell contrib-level-${level}" data-tooltip="${tooltip}"></div>`;
   });
   const half = Math.ceil(cells.length / 2);
   const row1 = cells.slice(0, half).join('');
@@ -197,17 +197,22 @@ function combineDailyCommits(repoList, repoStats) {
     .map(([date, count]) => ({ date, count }));
 }
 
-function renderTileSquares(activity) {
-  if (!activity || !activity.length) return '';
-  const max = Math.max(...activity, 1);
-  const squares = activity.map(v => {
-    const opacity = v === 0 ? 0.1 : 0.3 + (v / max) * 0.7;
-    return `<span class="activity-square" style="opacity:${opacity}"></span>`;
-  }).join('');
-  return `<div class="repo-activity-squares">${squares}</div>`;
+function renderTileSquares(dailyCommits) {
+  if (!dailyCommits || !dailyCommits.length) return '';
+  const recent = dailyCommits.slice(-14);
+  const max = Math.max(...recent.map(d => d.count), 1);
+  const makeSquare = d => {
+    const opacity = d.count === 0 ? 0.1 : 0.3 + (d.count / max) * 0.7;
+    const dateLabel = new Date(d.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const tooltip = d.count === 0 ? `${dateLabel}: No activity` : `${dateLabel}: ${d.count} commit${d.count !== 1 ? 's' : ''}`;
+    return `<span class="activity-square" style="opacity:${opacity}" data-tooltip="${tooltip}"></span>`;
+  };
+  const row1 = recent.slice(0, 7).map(makeSquare).join('');
+  const row2 = recent.slice(7).map(makeSquare).join('');
+  return `<div class="repo-activity-squares"><div class="activity-row">${row1}</div><div class="activity-row">${row2}</div></div>`;
 }
 
-function renderRepoTile(project, role, parentBoardUrl) {
+function renderRepoTile(project, role, parentBoardUrl, repoStats) {
   const dotColor = getStatusDotColor(project.status);
   const borderClass = role === 'main' ? 'repo-main' : 'repo-child';
   const repoName = project.name || project.repo.split('/')[1];
@@ -233,7 +238,7 @@ function renderRepoTile(project, role, parentBoardUrl) {
         <span>${m.commits_7d || 0} c</span>
         <span>${m.open_prs || 0} pr</span>
         <span>${m.merged_prs_7d || 0} m</span>
-        ${renderTileSquares(project.activity)}
+        ${renderTileSquares(repoStats && repoStats[project.repo] ? repoStats[project.repo].dailyCommits : [])}
       </div>
     </div>
   `;
@@ -287,8 +292,8 @@ function renderProjectCards(projects, deployments, repoStats) {
 
     let repoTilesHtml = '';
     if (hasRepoTiles) {
-      const mainTile = renderRepoTile(p, 'main', parentBoardUrl);
-      const childTiles = children.map(c => renderRepoTile(c, 'child', parentBoardUrl)).join('');
+      const mainTile = renderRepoTile(p, 'main', parentBoardUrl, repoStats);
+      const childTiles = children.map(c => renderRepoTile(c, 'child', parentBoardUrl, repoStats)).join('');
       repoTilesHtml = `<div class="project-repos">${mainTile}${childTiles}</div>`;
     }
 
