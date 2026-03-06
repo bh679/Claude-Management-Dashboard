@@ -16,9 +16,15 @@ async function loadProjectsData() {
     ]);
 
     const data = await projectsRes.json();
-    const deployments = deploymentsRes ? await deploymentsRes.json() : {};
-    const repoStats = repoStatsRes ? await repoStatsRes.json() : {};
-    const pendingRepos = pendingRes ? await pendingRes.json() : [];
+    const deployments = (deploymentsRes && deploymentsRes.ok)
+      ? await deploymentsRes.json()
+      : {};
+    const repoStats = (repoStatsRes && repoStatsRes.ok)
+      ? await repoStatsRes.json()
+      : {};
+    const pendingRepos = (pendingRes && pendingRes.ok)
+      ? await pendingRes.json()
+      : [];
 
     loading.classList.add('hidden');
 
