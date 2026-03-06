@@ -5,14 +5,28 @@ const router = express.Router();
 let cache = { data: null, timestamp: 0 };
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-function getRepoList() {
-  const contentJson = execSync(
-    'gh api repos/bh679/coo-agent/contents/dashboard.json',
+function fetchGhFileContent(repoPath) {
+  const raw = execSync(
+    `gh api repos/bh679/coo-agent/contents/${repoPath}`,
     { encoding: 'utf8', timeout: 15000 }
   );
-  const contentData = JSON.parse(contentJson);
-  const dashboard = JSON.parse(Buffer.from(contentData.content, 'base64').toString('utf8'));
-  return dashboard.projects.map(p => p.repo);
+  const data = JSON.parse(raw);
+  return JSON.parse(Buffer.from(data.content, 'base64').toString('utf8'));
+}
+
+function getRepoList() {
+  const dashboard = fetchGhFileContent('dashboard.json');
+  const topLevel = dashboard.projects.map(p => p.repo);
+
+  let childRepos = [];
+  try {
+    const consumers = fetchGhFileContent('consumers.json');
+    childRepos = consumers.map(c => c.repo).filter(r => !topLevel.includes(r));
+  } catch {
+    // consumers.json may not exist
+  }
+
+  return [...topLevel, ...childRepos];
 }
 
 function buildGraphQLQuery(repos) {

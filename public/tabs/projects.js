@@ -201,13 +201,15 @@ function renderTileSquares(dailyCommits) {
   if (!dailyCommits || !dailyCommits.length) return '';
   const recent = dailyCommits.slice(-14);
   const max = Math.max(...recent.map(d => d.count), 1);
-  const squares = recent.map(d => {
+  const makeSquare = d => {
     const opacity = d.count === 0 ? 0.1 : 0.3 + (d.count / max) * 0.7;
     const dateLabel = new Date(d.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     const tooltip = d.count === 0 ? `${dateLabel}: No activity` : `${dateLabel}: ${d.count} commit${d.count !== 1 ? 's' : ''}`;
     return `<span class="activity-square" style="opacity:${opacity}" data-tooltip="${tooltip}"></span>`;
-  }).join('');
-  return `<div class="repo-activity-squares">${squares}</div>`;
+  };
+  const row1 = recent.slice(0, 7).map(makeSquare).join('');
+  const row2 = recent.slice(7).map(makeSquare).join('');
+  return `<div class="repo-activity-squares"><div class="activity-row">${row1}</div><div class="activity-row">${row2}</div></div>`;
 }
 
 function renderRepoTile(project, role, parentBoardUrl, repoStats) {
