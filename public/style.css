@@ -451,6 +451,7 @@ body {
 .project-row {
   display: flex;
   gap: 12px;
+  align-items: flex-start;
 }
 
 .project-card {
@@ -461,13 +462,16 @@ body {
   border: 1px solid #333;
   border-radius: 8px;
   padding: 16px 20px;
-  text-decoration: none;
   color: inherit;
-  transition: border-color 0.2s;
 }
 
-.project-card:hover {
-  border-color: #5ba8a0;
+.project-name-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.project-name-link:hover .project-name {
+  color: #5ba8a0;
 }
 
 .project-card-header {
@@ -607,6 +611,110 @@ body {
   color: #e0b050;
   line-height: 1.5;
 }
+
+/* Repo Tiles (within project cards) */
+.project-repos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.project-repo-tile {
+  width: calc(33.33% - 6px);
+  min-width: 140px;
+  background: rgba(0, 0, 0, 0.15);
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 8px 10px;
+  text-decoration: none;
+  color: inherit;
+  border-left: 3px solid #444;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.project-repo-tile:hover {
+  background: rgba(0, 0, 0, 0.25);
+  border-color: #555;
+}
+
+.project-repo-tile.repo-main {
+  border-left-color: #5ba8a0;
+}
+
+.project-repo-tile.repo-child {
+  border-left-color: #555;
+}
+
+.repo-tile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.repo-tile-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #ccc;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.repo-tile-name:hover {
+  color: #5ba8a0;
+}
+
+.repo-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.repo-board-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.repo-board-btn:hover {
+  opacity: 1;
+}
+
+.repo-tile-metrics {
+  display: flex;
+  gap: 8px;
+  font-size: 11px;
+  color: #777;
+}
+
+.repo-activity-squares {
+  display: flex;
+  gap: 2px;
+  margin-left: auto;
+}
+
+.activity-square {
+  width: 8px;
+  height: 8px;
+  background: #5ba8a0;
+  border-radius: 2px;
+}
+
+@media (max-width: 640px) {
+  .project-repo-tile {
+    width: calc(50% - 4px);
+    min-width: 120px;
+  }
 
 /* Pending Repos */
 .pending-repos-header {

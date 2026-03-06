@@ -73,6 +73,13 @@ function getStatusClass(status) {
   return '';
 }
 
+function getStatusDotColor(status) {
+  if (status === 'moving_well') return '#4caf50';
+  if (status === 'at_risk') return '#e0b050';
+  if (status === 'needs_decision') return '#e07070';
+  return '#666';
+}
+
 function getDeployStatusClass(status) {
   if (status === 'live') return 'deploy-live';
   if (status === 'error') return 'deploy-error';
@@ -85,6 +92,17 @@ function getDeployStatusLabel(status) {
   if (status === 'error') return 'Error';
   if (status === 'offline') return 'Offline';
   return 'Not Deployed';
+}
+
+function renderActivityGraph(activity) {
+  if (!activity || !activity.length) return '';
+  const max = Math.max(...activity, 1);
+  const bars = activity.map(v => {
+    const height = Math.round((v / max) * 20);
+    const opacity = v === 0 ? 0.15 : 0.4 + (v / max) * 0.6;
+    return `<div class="activity-bar" style="height:${Math.max(height, 2)}px;opacity:${opacity}"></div>`;
+  }).join('');
+  return `<div class="repo-activity-graph">${bars}</div>`;
 }
 
 function renderDeploymentCard(repo, deployment) {
@@ -140,22 +158,75 @@ function renderContributionGraph(dailyCommits) {
   if (!dailyCommits || dailyCommits.length === 0) {
     return '<div class="contrib-graph contrib-empty"></div>';
   }
-
   const cells = dailyCommits.map(d => {
     const level = getContribLevel(d.count);
     const dateLabel = new Date(d.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     const tooltip = d.count === 0 ? `${dateLabel}: No activity` : `${dateLabel}: ${d.count} commit${d.count !== 1 ? 's' : ''}`;
     return `<div class="contrib-cell contrib-level-${level}" title="${tooltip}"></div>`;
   });
-
   const half = Math.ceil(cells.length / 2);
   const row1 = cells.slice(0, half).join('');
   const row2 = cells.slice(half).join('');
-
   return `
     <div class="contrib-graph">
       <div class="contrib-row">${row1}</div>
       <div class="contrib-row">${row2}</div>
+    </div>
+  `;
+}
+
+function combineDailyCommits(repoList, repoStats) {
+  const dateMap = {};
+  for (const repo of repoList) {
+    const stats = repoStats[repo];
+    if (!stats || !stats.dailyCommits) continue;
+    for (const d of stats.dailyCommits) {
+      dateMap[d.date] = (dateMap[d.date] || 0) + d.count;
+    }
+  }
+  return Object.entries(dateMap)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, count]) => ({ date, count }));
+}
+
+function renderTileSquares(activity) {
+  if (!activity || !activity.length) return '';
+  const max = Math.max(...activity, 1);
+  const squares = activity.map(v => {
+    const opacity = v === 0 ? 0.1 : 0.3 + (v / max) * 0.7;
+    return `<span class="activity-square" style="opacity:${opacity}"></span>`;
+  }).join('');
+  return `<div class="repo-activity-squares">${squares}</div>`;
+}
+
+function renderRepoTile(project, role, parentBoardUrl) {
+  const dotColor = getStatusDotColor(project.status);
+  const borderClass = role === 'main' ? 'repo-main' : 'repo-child';
+  const repoName = project.name || project.repo.split('/')[1];
+  const m = project.metrics || {};
+
+  const hasOwnBoard = project.board_url && project.board_url !== parentBoardUrl;
+  const boardBtn = hasOwnBoard
+    ? `<a class="repo-board-btn" href="${escapeHtml(project.board_url)}" target="_blank" onclick="event.stopPropagation();" title="Project Board" style="color:${dotColor}">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M1.75 0h12.5C15.216 0 16 .784 16 1.75v12.5A1.75 1.75 0 0114.25 16H1.75A1.75 1.75 0 010 14.25V1.75C0 .784.784 0 1.75 0zM1.5 1.75v12.5c0 .138.112.25.25.25h12.5a.25.25 0 00.25-.25V1.75a.25.25 0 00-.25-.25H1.75a.25.25 0 00-.25.25zM11.75 3a.75.75 0 01.75.75v7.5a.75.75 0 01-1.5 0v-7.5a.75.75 0 01.75-.75zm-8.25.75a.75.75 0 011.5 0v5.5a.75.75 0 01-1.5 0zM8 3a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 018 3z"/></svg>
+      </a>`
+    : '';
+
+  return `
+    <div class="project-repo-tile ${borderClass}">
+      <div class="repo-tile-header">
+        <a class="repo-tile-name" href="https://github.com/${escapeHtml(project.repo)}" target="_blank">
+          <span class="repo-status-dot" style="background:${dotColor}"></span>
+          ${escapeHtml(repoName)}
+        </a>
+        ${boardBtn}
+      </div>
+      <div class="repo-tile-metrics">
+        <span>${m.commits_7d || 0} c</span>
+        <span>${m.open_prs || 0} pr</span>
+        <span>${m.merged_prs_7d || 0} m</span>
+        ${renderTileSquares(project.activity)}
+      </div>
     </div>
   `;
 }
@@ -179,8 +250,13 @@ function renderProjectCards(projects, deployments, repoStats) {
           `<span class="project-risk">${escapeHtml(r.summary)}</span>`
         ).join('')}</div>`
       : '';
-    const daysSince = p.metrics.days_since_last_commit;
-    const lastCommitLabel = daysSince === 0 ? 'Today' : daysSince === 1 ? '1 day ago' : daysSince + ' days ago';
+
+    const cm = p.combined_metrics || p.metrics;
+    const daysSince = cm.days_since_last_commit;
+    const lastCommitLabel = daysSince === 0 ? 'Today'
+      : daysSince === 1 ? '1d ago'
+      : daysSince != null ? daysSince + 'd ago'
+      : '?';
 
     const deployment = deployments[p.repo] || null;
     const stats = repoStats ? repoStats[p.repo] : null;
@@ -196,25 +272,52 @@ function renderProjectCards(projects, deployments, repoStats) {
       ? `<a class="project-board-link" href="${escapeHtml(boardUrl)}" target="_blank" onclick="event.stopPropagation();">Board${boardBadge}</a>`
       : '';
 
+    // Render repo tiles: main + children
+    const children = p.children || [];
+    const hasRepoTiles = children.length > 0;
+    const parentBoardUrl = p.board_url || null;
+
+    let repoTilesHtml = '';
+    if (hasRepoTiles) {
+      const mainTile = renderRepoTile(p, 'main', parentBoardUrl);
+      const childTiles = children.map(c => renderRepoTile(c, 'child', parentBoardUrl)).join('');
+      repoTilesHtml = `<div class="project-repos">${mainTile}${childTiles}</div>`;
+    }
+
+    // Card-level board button
+    const cardBoardBtn = p.board_url
+      ? `<a class="card-board-btn" href="${escapeHtml(p.board_url)}" target="_blank" title="Project Board">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M1.75 0h12.5C15.216 0 16 .784 16 1.75v12.5A1.75 1.75 0 0114.25 16H1.75A1.75 1.75 0 010 14.25V1.75C0 .784.784 0 1.75 0zM1.5 1.75v12.5c0 .138.112.25.25.25h12.5a.25.25 0 00.25-.25V1.75a.25.25 0 00-.25-.25H1.75a.25.25 0 00-.25.25zM11.75 3a.75.75 0 01.75.75v7.5a.75.75 0 01-1.5 0v-7.5a.75.75 0 01.75-.75zm-8.25.75a.75.75 0 011.5 0v5.5a.75.75 0 01-1.5 0zM8 3a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 018 3z"/></svg>
+        </a>`
+      : '';
+
+    // Combined contribution graph from repo-stats
+    const allRepos = [p.repo, ...children.map(c => c.repo)];
+    const dailyCommits = combineDailyCommits(allRepos, repoStats);
+    const contribGraph = renderContributionGraph(dailyCommits);
+
     return `
       <div class="project-row">
-        <div class="project-card" onclick="window.open('https://github.com/${escapeHtml(p.repo)}', '_blank')" style="cursor:pointer">
+        <div class="project-card">
           <div class="project-card-header">
-            <span class="project-name">${escapeHtml(p.name)}</span>
-            ${boardLink}
-            <span class="project-status-badge ${statusClass}">${escapeHtml(p.status_label)}</span>
-          </div>
-          <div class="project-description">${escapeHtml(p.description)}</div>
-          <div class="project-activity">
-            ${renderContributionGraph(stats ? stats.dailyCommits : [])}
-            <div class="project-stats-row">
-              <span class="project-stat">${issuesLabel} issues</span>
-              <span class="project-stat">${tasksLabel} tasks</span>
-              <span class="project-stat">${p.metrics.open_prs} open PRs</span>
-              <span class="project-stat">Last: ${lastCommitLabel}</span>
+            <a class="project-name-link" href="https://github.com/${escapeHtml(p.repo)}" target="_blank">
+              <span class="project-name">${escapeHtml(p.name)}</span>
+            </a>
+            <div class="project-header-right">
+              ${cardBoardBtn}
+              <span class="project-status-badge ${statusClass}">${escapeHtml(p.status_label)}</span>
             </div>
           </div>
+          <div class="project-description">${escapeHtml(p.description)}</div>
+          <div class="project-metrics">
+            <span class="project-metric">${cm.commits_7d} c</span>
+            <span class="project-metric">${cm.open_prs} pr</span>
+            <span class="project-metric">${cm.merged_prs_7d} m</span>
+            <span class="project-metric">Last: ${lastCommitLabel}</span>
+          </div>
+          ${contribGraph}
           ${risksHtml}
+          ${repoTilesHtml}
         </div>
         ${renderDeploymentCard(p.repo, deployment)}
       </div>
