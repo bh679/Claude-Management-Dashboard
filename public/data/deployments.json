@@ -30,6 +30,9 @@
   },
   "bh679/Claude-Max-Usage-Analytics": {
     "url": "https://brennan.games/ClaudeMD/",
+    "additional_urls": [
+      "https://brennan.games/CMUA/"
+    ],
     "server": "AWS Lightsail",
     "server_url": "https://lightsail.aws.amazon.com/ls/webapp/ap-southeast-2/instances/Brennan.Games2/connect",
     "instance_name": "Brennan.Games2",
